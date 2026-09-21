@@ -33,6 +33,40 @@ logger = logging.getLogger("web")
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
+# 自适应兼容 Starlette / FastAPI 新旧版本的 TemplateResponse 签名差异
+_original_template_response = templates.TemplateResponse
+
+
+def _safe_template_response(*args, **kwargs):
+    """
+    自适应兼容 Starlette 新旧版本的 TemplateResponse:
+    - 旧版签名: TemplateResponse(name, context, status_code=200, ...)
+    - 新版签名 (Starlette >= 0.36): TemplateResponse(request=request, name=name, context=context, status_code=200, ...)
+    """
+    if len(args) >= 1 and isinstance(args[0], str):
+        name = args[0]
+        context = args[1] if len(args) > 1 else kwargs.get("context", {})
+        request = context.get("request") or kwargs.get("request")
+        status_code = kwargs.get("status_code", 200)
+        if len(args) > 2:
+            status_code = args[2]
+
+        try:
+            # 优先尝试新版签名
+            if request is not None:
+                return _original_template_response(
+                    request=request, name=name, context=context, status_code=status_code
+                )
+        except TypeError:
+            pass
+        # 回退旧版签名
+        return _original_template_response(name, context, status_code=status_code)
+
+    return _original_template_response(*args, **kwargs)
+
+
+templates.TemplateResponse = _safe_template_response
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

@@ -181,11 +181,18 @@ class WeChatNotifier:
         target_list: List[str] = []
         if isinstance(to, (list, tuple, set)):
             target_list = [str(x).strip() for x in to if str(x).strip()]
+            # 如果显式传入了空列表，说明调用方明确无接收人或已关闭通知，直接安全跳过
+            if len(to) == 0:
+                logger.info("微信通知未指定接收人 (to=[])，已安全跳过推送")
+                return WeChatResult(
+                    success=True,
+                    err_code=0,
+                    err_msg="接收人列表为空，跳过推送",
+                )
         elif isinstance(to, str) and to.strip():
             target_list = [x.strip() for x in to.split(",") if x.strip()]
-
-        # 留空时回退到默认 openid (也支持逗号分隔)
-        if not target_list and self.default_openid:
+        elif to is None and self.default_openid:
+            # 仅在外部完全未传 to 时回退默认 openid
             target_list = [x.strip() for x in self.default_openid.split(",") if x.strip()]
 
         if not target_list:

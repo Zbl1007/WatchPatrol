@@ -8,7 +8,7 @@ import json
 import logging
 import inspect
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from datetime import datetime
 from pathlib import Path
 
@@ -27,6 +27,9 @@ class BaseTask(ABC):
     interval_seconds: int = 60
     enabled: bool = True
     is_builtin: bool = True
+    enable_notify: bool = True
+    # 绑定的通讯录联系人 ID 列表 (例如 ['c_1234abcd'])
+    notify_contact_ids: Optional[List[str]] = None
     # 指定本任务绑定的微信接收人 openid (支持 str 或 List[str]，留空则使用全局默认)
     notify_openids: Optional[Any] = None
 
@@ -69,6 +72,10 @@ class BaseTask(ABC):
             self.interval_seconds = int(saved_config["interval_seconds"])
         if "enabled" in saved_config:
             self.enabled = bool(saved_config["enabled"])
+        if "enable_notify" in saved_config:
+            self.enable_notify = bool(saved_config["enable_notify"])
+        if "notify_contact_ids" in saved_config:
+            self.notify_contact_ids = saved_config["notify_contact_ids"]
         if "notify_openids" in saved_config:
             self.notify_openids = saved_config["notify_openids"]
 
@@ -159,6 +166,22 @@ class BaseTask(ABC):
 
     def get_notify_openids(self) -> list:
         """获取该任务绑定的微信接收人 openid 列表"""
+        # 若微信通知被用户关闭，返回空列表
+        if not getattr(self, "enable_notify", True):
+            return []
+
+        # 优先通过通讯录管理器解析绑定的联系人 ID (如 ['c_1234abcd'])
+        contact_ids = getattr(self, "notify_contact_ids", None)
+        if contact_ids:
+            try:
+                from .contact_manager import contact_manager
+                resolved = contact_manager.resolve_openids(contact_ids)
+                if resolved:
+                    return resolved
+            except Exception as e:
+                logger.error("[%s] 解析任务绑定的联系人 OpenID 异常: %s", self.task_id, e)
+
+        # 其次兼容直接填写的原始 openid 列表
         targets = []
         if self.notify_openids:
             if isinstance(self.notify_openids, (list, tuple, set)):
@@ -166,13 +189,15 @@ class BaseTask(ABC):
             elif isinstance(self.notify_openids, str) and self.notify_openids.strip():
                 targets = [x.strip() for x in self.notify_openids.split(",") if x.strip()]
 
-        # 若未指定，回退读取环境变量的全局管理员
-        if not targets:
-            default_oid = os.getenv("WECHAT_OPENID") or os.getenv("ADMIN_OPENID", "")
-            if default_oid:
-                targets = [x.strip() for x in default_oid.split(",") if x.strip()]
+        if targets:
+            return targets
 
-        return targets
+        # 仅在既未选择联系人、又未指定 openid 时，才回退读取环境变量的全局管理员
+        default_oid = os.getenv("WECHAT_OPENID") or os.getenv("ADMIN_OPENID", "")
+        if default_oid:
+            return [x.strip() for x in default_oid.split(",") if x.strip()]
+
+        return []
 
     def get_masked_notify_targets(self) -> list:
         """获取脱敏后的微信接收人标识用于展示，例如 ovAe***jc"""
@@ -190,7 +215,7 @@ class BaseTask(ABC):
         raw_targets = self.get_notify_openids()
         try:
             from .contact_manager import contact_manager
-            contact_names = contact_manager.get_contact_names(raw_targets)
+            contact_names = contact_manager.get_contact_names(getattr(self, "notify_contact_ids", None) or raw_targets)
         except Exception:
             contact_names = self.get_masked_notify_targets()
 
@@ -201,10 +226,12 @@ class BaseTask(ABC):
             "task_type": getattr(self, "task_type", "interval"),
             "interval_seconds": self.interval_seconds,
             "enabled": self.enabled,
+            "enable_notify": getattr(self, "enable_notify", True),
+            "notify_contact_ids": getattr(self, "notify_contact_ids", []),
             "notify_targets": masked_targets,
             "contact_names": contact_names,
             "notify_count": len(masked_targets),
-            "is_custom_notify": bool(self.notify_openids),
+            "is_custom_notify": bool(getattr(self, "notify_contact_ids", None) or self.notify_openids),
             "is_builtin": getattr(self, "is_builtin", True),
             "last_run_time": self.last_run_time or self.state.get("last_check_time", ""),
             "last_status": self.last_status,
@@ -227,9 +254,11 @@ class BaseTask(ABC):
             "task_type": getattr(self, "task_type", "interval"),
             "interval_seconds": self.interval_seconds,
             "enabled": self.enabled,
+            "enable_notify": getattr(self, "enable_notify", True),
+            "notify_contact_ids": getattr(self, "notify_contact_ids", []) or [],
             "notify_openids": self.get_notify_openids(),
             "raw_openids_text": raw_openids_text,
-            "is_custom_notify": bool(self.notify_openids),
+            "is_custom_notify": bool(getattr(self, "notify_contact_ids", None) or self.notify_openids),
         }
 
     def update_config(
@@ -237,6 +266,8 @@ class BaseTask(ABC):
         interval_seconds: Optional[int] = None,
         enabled: Optional[bool] = None,
         notify_openids: Optional[Any] = None,
+        enable_notify: Optional[bool] = None,
+        notify_contact_ids: Optional[List[str]] = None,
         **kwargs,
     ) -> Dict[str, Any]:
         """在线更新任务配置并即时写回文本持久化"""
@@ -247,6 +278,12 @@ class BaseTask(ABC):
 
         if enabled is not None:
             self.enabled = bool(enabled)
+
+        if enable_notify is not None:
+            self.enable_notify = bool(enable_notify)
+
+        if notify_contact_ids is not None:
+            self.notify_contact_ids = list(notify_contact_ids)
 
         if notify_openids is not None:
             if isinstance(notify_openids, str):
@@ -262,6 +299,8 @@ class BaseTask(ABC):
         self.state["config"] = {
             "interval_seconds": self.interval_seconds,
             "enabled": self.enabled,
+            "enable_notify": self.enable_notify,
+            "notify_contact_ids": self.notify_contact_ids,
             "notify_openids": self.notify_openids,
         }
         self.save_state()

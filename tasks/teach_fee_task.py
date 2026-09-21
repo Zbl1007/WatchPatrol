@@ -79,6 +79,7 @@ class TeachFeeDailyReportTask(BaseTask):
             interval_seconds=60,
             enabled=enabled,
             notify_openids=notify_openids,
+            **kwargs,
         )
 
     def get_api_config(self) -> tuple[str, str]:

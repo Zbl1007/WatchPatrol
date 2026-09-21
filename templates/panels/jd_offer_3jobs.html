@@ -1,0 +1,233 @@
+<!-- 
+  招考动态 · 重点招考岗位监控面板插件
+  所属任务: jd_offer_3jobs
+  支持全自动插拔：放入 templates/panels/ 即可自动挂载
+-->
+<div id="panel-container-jd_offer_3jobs" class="space-y-6">
+  <!-- 重点监控岗位详情折叠卡片 -->
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all">
+    <!-- 折叠面板头部 -->
+    <button
+      type="button"
+      onclick="toggleCollapse('section-jd-jobs', 'icon-jd-jobs')"
+      class="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50/80 transition-colors text-left focus:outline-none"
+    >
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm">
+          <i class="fa-solid fa-layer-group"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h3 class="text-base font-bold text-slate-900">招录动态 · 重点监控岗位 (3 个)</h3>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block mr-1"></span>监控中
+            </span>
+          </div>
+          <span class="text-xs text-slate-400">数据源：人才网报名公开接口 · 任务ID: jd_offer_3jobs</span>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3 text-slate-400">
+        <span class="text-xs hidden sm:inline font-medium">点击折叠/展开岗位详情</span>
+        <div class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+          <i id="icon-jd-jobs" class="fa-solid fa-chevron-down text-xs transition-transform duration-300 transform rotate-180"></i>
+        </div>
+      </div>
+    </button>
+
+    <!-- 折叠面板内容区 (默认展开) -->
+    <div id="section-jd-jobs" class="px-6 pb-6 pt-3 border-t border-slate-100 transition-all duration-300">
+      <div id="jobs-container" class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-1">
+        <!-- 岗位卡片动态挂载 -->
+        <div class="animate-pulse bg-slate-50 p-6 rounded-2xl border border-slate-200 h-64"></div>
+        <div class="animate-pulse bg-slate-50 p-6 rounded-2xl border border-slate-200 h-64"></div>
+        <div class="animate-pulse bg-slate-50 p-6 rounded-2xl border border-slate-200 h-64"></div>
+      </div>
+
+      <!-- 内嵌在招考动态面板底部的变动历史流水 (默认折叠收起) -->
+      <div class="mt-6 pt-4 border-t border-slate-100">
+        <button
+          type="button"
+          onclick="toggleCollapse('section-jd-history', 'icon-jd-history')"
+          class="w-full px-4 py-2.5 bg-slate-50 hover:bg-slate-100/80 rounded-xl flex items-center justify-between transition-colors text-left"
+        >
+          <div class="flex items-center space-x-2.5">
+            <i class="fa-solid fa-clock-rotate-left text-slate-400 text-xs"></i>
+            <span class="text-xs font-bold text-slate-800">招考人数变动历史流水</span>
+            <span id="history-count" class="text-[11px] font-semibold px-2 py-0.5 bg-white text-slate-600 rounded-md border border-slate-200">0 条变动</span>
+          </div>
+
+          <div class="flex items-center space-x-1.5 text-xs text-slate-400">
+            <span>点击展开流水明细</span>
+            <i id="icon-jd-history" class="fa-solid fa-chevron-down text-[10px] transition-transform duration-300"></i>
+          </div>
+        </button>
+
+        <!-- 历史表格折叠区 (默认 hidden) -->
+        <div id="section-jd-history" class="hidden mt-3 rounded-xl border border-slate-200 overflow-hidden overflow-x-auto bg-white">
+          <table class="w-full text-left text-xs text-slate-600">
+            <thead class="bg-slate-50 text-[11px] font-semibold text-slate-500 uppercase border-b border-slate-100">
+              <tr>
+                <th class="px-4 py-2.5">变动时间</th>
+                <th class="px-4 py-2.5">岗位代码</th>
+                <th class="px-4 py-2.5">岗位名称</th>
+                <th class="px-4 py-2.5">报名变动</th>
+                <th class="px-4 py-2.5">微信推送状态</th>
+              </tr>
+            </thead>
+            <tbody id="history-tbody" class="divide-y divide-slate-100">
+              <tr>
+                <td colspan="5" class="px-4 py-6 text-center text-slate-400">
+                  <i class="fa-regular fa-folder-open text-xl mb-1 block"></i>
+                  暂无人数变动记录（当前报名人数保持稳定）
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 底部状态说明与测试操作条 -->
+      <div class="mt-4 pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs">
+        <div class="flex items-center space-x-2 text-slate-500">
+          <i class="fa-solid fa-shield-halved text-emerald-500"></i>
+          <span>微信告警机制: <strong class="text-slate-700">人数变动时即时直推</strong></span>
+          <span>·</span>
+          <span class="text-slate-400">若报名人数保持平稳则静默不重复打扰</span>
+        </div>
+
+        <div class="flex items-center space-x-2">
+          <button
+            type="button"
+            onclick="triggerTestNotifyForTask('jd_offer_3jobs')"
+            class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 transition active:scale-95"
+            title="模拟发送一条岗位变动通知以测试微信通道连通性"
+          >
+            <i class="fa-solid fa-paper-plane mr-1.5 text-slate-500"></i>
+            测试发送岗位变动卡片
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  /**
+   * 遵循标准插件协议的招考岗位渲染函数
+   */
+  window.renderPanel_jd_offer_3jobs = function(taskState, taskSummary) {
+    if (!taskState) return;
+
+    // 渲染岗位卡片
+    const jobsContainer = document.getElementById("jobs-container");
+    const jobs = taskState.jobs || {};
+    const jobKeys = Object.keys(jobs);
+
+    if (jobKeys.length === 0) {
+      jobsContainer.innerHTML = `<div class="col-span-3 text-center py-12 text-slate-400">正在抓取岗位初始数据...</div>`;
+    } else {
+      jobsContainer.innerHTML = jobKeys.map(k => {
+        const job = jobs[k];
+        const isZero = job.post_num === 0;
+        const ratio = (job.post_num / (job.quantity || 1)).toFixed(1);
+
+        return `
+          <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow relative flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold font-mono ${
+                  isZero ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'
+                }">
+                  ${job.post_code}
+                </span>
+                ${isZero ? `
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-600 border border-rose-200">
+                    <i class="fa-solid fa-fire-flame-curved mr-1 text-[10px]"></i> 当前无人报名
+                  </span>
+                ` : `
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    竞争比 ${ratio}:1
+                  </span>
+                `}
+              </div>
+
+              <h4 class="text-lg font-bold text-slate-900 leading-snug">${job.post}</h4>
+              <div class="text-xs text-slate-500 mt-1 flex items-center space-x-2">
+                <span><i class="fa-solid fa-location-dot text-slate-400 mr-1"></i>${job.station}</span>
+                <span>·</span>
+                <span><i class="fa-solid fa-graduation-cap text-slate-400 mr-1"></i>${job.education}</span>
+              </div>
+
+              <div class="mt-6 mb-4 grid grid-cols-2 gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                <div>
+                  <div class="text-xs text-slate-400 font-medium">当前报名人数</div>
+                  <div class="text-3xl font-extrabold font-mono mt-1 ${isZero ? 'text-amber-600' : 'text-slate-900'}">
+                    ${job.post_num} <span class="text-xs font-normal text-slate-500">人</span>
+                  </div>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-400 font-medium">招考计划人数</div>
+                  <div class="text-3xl font-extrabold font-mono mt-1 text-slate-900">
+                    ${job.quantity} <span class="text-xs font-normal text-slate-500">人</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="text-xs text-slate-600 line-clamp-2 mb-4 leading-relaxed" title="${job.subject}">
+                <strong class="text-slate-700">专业:</strong> ${job.subject}
+              </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span class="text-slate-400 font-mono">${job.last_checked ? job.last_checked.split(' ')[1] : ''}</span>
+              <a href="${job.query_url}" target="_blank" class="text-indigo-600 hover:text-indigo-800 font-medium inline-flex items-center">
+                查看官方接口 <i class="fa-solid fa-arrow-up-right-from-square ml-1 text-[10px]"></i>
+              </a>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    // 渲染历史流水
+    const history = taskState.history || [];
+    document.getElementById("history-count").innerText = `${history.length} 条变动`;
+    const tbody = document.getElementById("history-tbody");
+
+    if (history.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" class="px-6 py-8 text-center text-slate-400">
+            <i class="fa-regular fa-folder-open text-2xl mb-2 block"></i>
+            暂无人数变动记录（当前报名人数保持稳定）
+          </td>
+        </tr>
+      `;
+    } else {
+      tbody.innerHTML = history.map(item => `
+        <tr class="hover:bg-slate-50/80 transition-colors">
+          <td class="px-6 py-3 font-mono text-xs text-slate-500">${item.time}</td>
+          <td class="px-6 py-3 font-mono font-semibold text-slate-700">${item.post_code}</td>
+          <td class="px-6 py-3 text-slate-900 font-medium">${item.post_name}</td>
+          <td class="px-6 py-3">
+            <span class="inline-flex items-center font-mono font-bold text-indigo-700 px-2 py-0.5 bg-indigo-50 rounded">
+              ${item.change_text || (item.old_num + '人 -> ' + item.new_num + '人')}
+            </span>
+          </td>
+          <td class="px-6 py-3">
+            ${item.notified ? `
+              <span class="inline-flex items-center text-xs font-semibold text-emerald-600">
+                <i class="fa-solid fa-check-circle mr-1"></i> 微信已推送
+              </span>
+            ` : `
+              <span class="inline-flex items-center text-xs font-semibold text-rose-500">
+                <i class="fa-solid fa-times-circle mr-1"></i> 推送未成功
+              </span>
+            `}
+          </td>
+        </tr>
+      `).join("");
+    }
+  };
+</script>

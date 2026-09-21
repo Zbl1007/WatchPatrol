@@ -38,21 +38,33 @@
         </div>
       </div>
 
-      <div class="flex items-center space-x-3">
-        <button id="btn-check-now" onclick="triggerCheck('jd_offer_3jobs')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 active:scale-95">
-          <i id="btn-icon" class="fa-solid fa-arrows-rotate mr-2"></i>
-          <span id="btn-text">立即检测招考岗位</span>
+      <div class="flex items-center space-x-2.5">
+        <!-- 微信通讯录人员管理入口 -->
+        <button onclick="openContactsModal()" class="inline-flex items-center px-3 py-2 text-xs font-semibold text-slate-700 hover:text-indigo-600 bg-white hover:bg-indigo-50/80 border border-slate-200 rounded-lg shadow-sm transition active:scale-95">
+          <i class="fa-solid fa-address-book text-indigo-500 mr-1.5"></i>
+          <span>微信通讯录</span>
         </button>
 
-        <div class="h-6 w-px bg-slate-200 mx-1 hidden sm:block"></div>
+        <!-- 添加新监控任务入口 -->
+        <button onclick="openCreateTaskModal()" class="inline-flex items-center px-3 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition active:scale-95">
+          <i class="fa-solid fa-plus mr-1.5"></i>
+          <span>添加任务</span>
+        </button>
+
+        <div class="h-5 w-px bg-slate-200 mx-0.5 hidden sm:block"></div>
+
+        <button id="btn-check-now" onclick="triggerCheck('jd_offer_3jobs')" class="hidden md:inline-flex items-center px-3 py-2 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition active:scale-95">
+          <i id="btn-icon" class="fa-solid fa-arrows-rotate mr-1.5 text-slate-500"></i>
+          <span id="btn-text">检测岗位</span>
+        </button>
 
         <div class="flex items-center space-x-2">
-          <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700">
+          <span class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700">
             <i class="fa-solid fa-user-shield mr-1.5 text-indigo-600"></i>
             {{ current_user or 'admin' }}
           </span>
-          <a href="/logout" title="退出登录" class="inline-flex items-center justify-center w-9 h-9 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">
-            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          <a href="/logout" title="退出登录" class="inline-flex items-center justify-center w-8 h-8 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">
+            <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
           </a>
         </div>
       </div>
@@ -92,84 +104,17 @@
       </div>
     </div>
 
-    <!-- 任务专属监控内容区容器 (支持折叠与多任务扩展) -->
-    <div class="space-y-6">
-      
-      <!-- 任务：重点监控岗位详情折叠卡片 -->
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all">
-        <!-- 折叠面板头部 (点击整行可展开/折叠) -->
-        <button
-          type="button"
-          onclick="toggleCollapse('section-jd-jobs', 'icon-jd-jobs')"
-          class="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50/80 transition-colors text-left focus:outline-none"
-        >
-          <div class="flex items-center space-x-3">
-            <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm">
-              <i class="fa-solid fa-layer-group"></i>
-            </div>
-            <div>
-              <div class="flex items-center space-x-2">
-                <h3 class="text-base font-bold text-slate-900">招录动态 · 重点监控岗位 (3 个)</h3>
-                <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block mr-1"></span>监控中
-                </span>
-              </div>
-              <span class="text-xs text-slate-400">数据源：人才网报名公开接口 · 任务ID: jd_offer_3jobs</span>
-            </div>
-          </div>
-
-          <div class="flex items-center space-x-3 text-slate-400">
-            <span class="text-xs hidden sm:inline font-medium">点击折叠/展开岗位详情</span>
-            <div class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
-              <i id="icon-jd-jobs" class="fa-solid fa-chevron-down text-xs transition-transform duration-300 transform rotate-180"></i>
-            </div>
-          </div>
-        </button>
-
-        <!-- 折叠面板内容区 (默认展开) -->
-        <div id="section-jd-jobs" class="px-6 pb-6 pt-3 border-t border-slate-100 transition-all duration-300">
-          <div id="jobs-container" class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-1">
-            <!-- 骨架屏 -->
-            <div class="animate-pulse bg-slate-50 p-6 rounded-2xl border border-slate-200 h-64"></div>
-            <div class="animate-pulse bg-slate-50 p-6 rounded-2xl border border-slate-200 h-64"></div>
-            <div class="animate-pulse bg-slate-50 p-6 rounded-2xl border border-slate-200 h-64"></div>
-          </div>
+    <!-- 动态可插拔业务面板挂载插槽 (根据 templates/panels/ 自动探测并注入) -->
+    <div id="dynamic-panels-container" class="space-y-6">
+      {% for panel in panels %}
+        {% include panel.template_name %}
+      {% endfor %}
+      {% if not panels %}
+        <div class="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-400">
+          <i class="fa-solid fa-cube text-3xl mb-2 text-slate-300"></i>
+          <p class="text-sm">暂无可插拔业务面板，在 templates/panels/ 目录下放入对应任务的 .html 模板即可自动挂载展示。</p>
         </div>
-      </div>
-
-    </div>
-
-    <!-- 变动历史记录 -->
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-        <div class="flex items-center space-x-2">
-          <i class="fa-solid fa-clock-rotate-left text-slate-500"></i>
-          <h3 class="text-base font-bold text-slate-900">人数变动流水日志</h3>
-        </div>
-        <span id="history-count" class="text-xs font-semibold px-2.5 py-0.5 bg-slate-100 text-slate-600 rounded-full">0 条变动</span>
-      </div>
-
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm text-slate-600">
-          <thead class="bg-slate-50/80 text-xs font-semibold text-slate-500 uppercase border-b border-slate-100">
-            <tr>
-              <th class="px-6 py-3">变动时间</th>
-              <th class="px-6 py-3">岗位代码</th>
-              <th class="px-6 py-3">岗位名称</th>
-              <th class="px-6 py-3">报名变动</th>
-              <th class="px-6 py-3">微信推送状态</th>
-            </tr>
-          </thead>
-          <tbody id="history-tbody" class="divide-y divide-slate-100">
-            <tr>
-              <td colspan="5" class="px-6 py-8 text-center text-slate-400">
-                <i class="fa-regular fa-folder-open text-2xl mb-2 block"></i>
-                暂无人数变动记录（当前报名人数保持稳定）
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      {% endif %}
     </div>
 
   </main>
@@ -207,8 +152,24 @@
           </label>
         </div>
 
-        <!-- 巡检周期 -->
-        <div>
+        <!-- 定时推送时间设置 -->
+        <div id="cfg-group-report-time" class="hidden">
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">
+            每天定时推送时间 (HH:MM)
+          </label>
+          <div class="relative">
+            <input
+              id="cfg-report-time"
+              type="time"
+              class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-violet-500"
+              value="22:00"
+            />
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">系统将在每天此时刻自动汇总当日指标直推微信，无需设置轮询巡检。</p>
+        </div>
+
+        <!-- 巡检周期设置 -->
+        <div id="cfg-group-interval">
           <label class="block text-xs font-semibold text-slate-700 mb-1.5">
             巡检检测周期 (秒)
           </label>
@@ -217,7 +178,6 @@
               id="cfg-interval"
               type="number"
               min="5"
-              required
               class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               placeholder="默认 60 秒"
             />
@@ -226,30 +186,33 @@
           <p class="text-[11px] text-slate-400 mt-1">建议 30 ~ 120 秒，避免过于高频请求源站。</p>
         </div>
 
-        <!-- 专属微信接收人 -->
-        <div>
-          <div class="flex items-center justify-between mb-1.5">
+        <!-- 微信通知开关与接收人员勾选 -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
             <label class="block text-xs font-semibold text-slate-700">
-              微信接收人 OpenID
+              微信通知推送
             </label>
-            <span class="text-[11px] text-slate-400">留空则自动使用全局默认接收人</span>
-          </div>
-          <textarea
-            id="cfg-openids"
-            rows="2"
-            class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            placeholder="支持填入多个 openid，用英文逗号隔开"
-          ></textarea>
-          <div class="flex items-center justify-between mt-1.5">
-            <span class="text-[11px] text-slate-400">关注测试号后在用户列表中获取</span>
             <button
               id="btn-test-send"
               type="button"
               onclick="triggerTestNotifyForModal()"
               class="text-xs text-indigo-600 hover:text-indigo-800 font-medium inline-flex items-center px-2 py-1 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition"
             >
-              <i class="fa-solid fa-paper-plane mr-1 text-[11px]"></i>向该任务接收人发一条测试
+              <i class="fa-solid fa-paper-plane mr-1 text-[11px]"></i>向接收人发测试卡片
             </button>
+          </div>
+
+          <!-- 通讯录勾选面板 -->
+          <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+            <div class="text-xs font-medium text-slate-600 flex items-center justify-between">
+              <span>选择通知联系人 (多选):</span>
+              <a href="javascript:void(0)" onclick="openContactsModal()" class="text-indigo-600 hover:underline text-[11px]">
+                <i class="fa-solid fa-user-plus mr-0.5"></i>管理通讯录
+              </a>
+            </div>
+            <div id="cfg-contacts-checkboxes" class="flex flex-wrap gap-2 pt-1">
+              <!-- 动态填充联系人多选标签 -->
+            </div>
           </div>
         </div>
 
@@ -274,6 +237,247 @@
     </div>
   </div>
 
+  <!-- 1. 微信通知联系人通讯录管理模态框 (Modal) -->
+  <div id="contacts-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden">
+    <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 transform transition-all flex flex-col max-h-[90vh]">
+      <!-- 弹窗头部 -->
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100 shrink-0">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-address-book"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-base">微信通知联系人通讯录</h3>
+            <span class="text-xs text-slate-400">配置微信 OpenID 与姓名映射，在任务中直接勾选姓名即可接收通知</span>
+          </div>
+        </div>
+        <button onclick="closeContactsModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- 联系人表格列表 -->
+      <div class="overflow-y-auto py-4 space-y-3 flex-1">
+        <div class="bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-slate-100/70 border-b border-slate-200 text-slate-500 font-semibold">
+                <th class="p-3 pl-4">姓名 / 备注名</th>
+                <th class="p-3 font-mono">微信 OpenID</th>
+                <th class="p-3 hidden sm:table-cell">用途说明</th>
+                <th class="p-3 text-right pr-4">操作</th>
+              </tr>
+            </thead>
+            <tbody id="contacts-table-body" class="divide-y divide-slate-200/60">
+              <!-- 动态注入联系人行 -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 快速新增联系人表单折叠卡片 -->
+        <div class="bg-indigo-50/40 rounded-2xl border border-indigo-100 p-4 space-y-3">
+          <div class="flex items-center space-x-2 text-indigo-900 font-bold text-xs">
+            <i class="fa-solid fa-user-plus text-indigo-600"></i>
+            <span>添加新联系人</span>
+          </div>
+          <form id="add-contact-form" onsubmit="submitAddContact(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-600 mb-1">姓名 / 备注名 <span class="text-rose-500">*</span></label>
+              <input
+                id="nc-name"
+                type="text"
+                required
+                placeholder="例如: 张工(后端)"
+                class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-600 mb-1">微信 OpenID <span class="text-rose-500">*</span></label>
+              <input
+                id="nc-openid"
+                type="text"
+                required
+                placeholder="ovAeH2Obw87d85y..."
+                class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-600 mb-1">说明备注 (选填)</label>
+              <div class="flex space-x-2">
+                <input
+                  id="nc-remark"
+                  type="text"
+                  placeholder="例如: 核心业务研发"
+                  class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <button
+                  type="submit"
+                  class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shrink-0 transition active:scale-95"
+                >
+                  添加
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- 底部关闭按钮 -->
+      <div class="pt-3 border-t border-slate-100 flex items-center justify-end shrink-0">
+        <button
+          type="button"
+          onclick="closeContactsModal()"
+          class="px-5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition"
+        >
+          关闭
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 创建新监控任务模态框 (Modal) -->
+  <div id="create-task-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 transform transition-all flex flex-col max-h-[90vh]">
+      <!-- 弹窗头部 -->
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100 shrink-0">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-plus"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-base">添加新监控任务</h3>
+            <span class="text-xs text-slate-400">选择脚本插件并绑定调度策略与通知人员</span>
+          </div>
+        </div>
+        <button onclick="closeCreateTaskModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="create-task-form" onsubmit="submitCreateTaskForm(event)" class="overflow-y-auto py-4 space-y-4 flex-1">
+        <!-- 任务名称 -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">
+            任务名称 <span class="text-rose-500">*</span>
+          </label>
+          <input
+            id="nt-name"
+            type="text"
+            required
+            placeholder="例如: 招考助理工程师岗位巡检"
+            class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+
+        <!-- 脚本插件选择下拉框 -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="block text-xs font-semibold text-slate-700">
+              执行脚本插件 <span class="text-rose-500">*</span>
+            </label>
+            <span class="text-[11px] text-slate-400">来自 plugins/ 目录</span>
+          </div>
+          <select
+            id="nt-plugin"
+            required
+            onchange="onPluginSelectChange()"
+            class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <!-- 动态注入可用插件选项 -->
+          </select>
+          <!-- 插件介绍卡片 -->
+          <div id="nt-plugin-desc" class="mt-2 p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-500 space-y-1">
+            <!-- 介绍动态填充 -->
+          </div>
+        </div>
+
+        <!-- 调度策略切换 (单选) -->
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
+          <label class="block text-xs font-semibold text-slate-700">调度执行策略</label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="flex items-center p-2.5 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-indigo-400 transition">
+              <input type="radio" name="nt-schedule-type" value="interval" checked onchange="toggleCreateScheduleType('interval')" class="text-indigo-600 focus:ring-indigo-500">
+              <div class="ml-2 text-xs">
+                <span class="font-bold text-slate-800 block">周期巡检轮询</span>
+                <span class="text-slate-400 text-[10px]">每隔 N 秒自动检查一次</span>
+              </div>
+            </label>
+
+            <label class="flex items-center p-2.5 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-indigo-400 transition">
+              <input type="radio" name="nt-schedule-type" value="scheduled" onchange="toggleCreateScheduleType('scheduled')" class="text-indigo-600 focus:ring-indigo-500">
+              <div class="ml-2 text-xs">
+                <span class="font-bold text-slate-800 block">每天定时推送</span>
+                <span class="text-slate-400 text-[10px]">到达固定时刻汇总推送</span>
+              </div>
+            </label>
+          </div>
+
+          <!-- 周期设置 -->
+          <div id="nt-group-interval">
+            <label class="block text-[11px] font-semibold text-slate-600 mb-1">轮询检测周期 (秒)</label>
+            <input
+              id="nt-interval"
+              type="number"
+              min="10"
+              value="60"
+              class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          <!-- 定时时刻设置 -->
+          <div id="nt-group-report-time" class="hidden">
+            <label class="block text-[11px] font-semibold text-slate-600 mb-1">每日汇报时刻 (HH:MM)</label>
+            <input
+              id="nt-report-time"
+              type="time"
+              value="22:00"
+              class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-violet-500"
+            />
+          </div>
+        </div>
+
+        <!-- 微信通知开关与联系人勾选 -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-semibold text-slate-700">微信通知选项</label>
+            <label class="inline-flex items-center cursor-pointer text-xs space-x-1.5">
+              <input id="nt-enable-notify" type="checkbox" checked class="rounded text-indigo-600 focus:ring-indigo-500">
+              <span class="text-slate-600">开启微信推送</span>
+            </label>
+          </div>
+
+          <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+            <div class="text-xs font-medium text-slate-600 flex items-center justify-between">
+              <span>勾选接收人:</span>
+              <span class="text-[11px] text-slate-400">未勾选则默认推给全局管理员</span>
+            </div>
+            <div id="nt-contacts-checkboxes" class="flex flex-wrap gap-2 pt-1">
+              <!-- 动态填充通讯录联系人复选标签 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 弹窗底部操作栏 -->
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-3 shrink-0">
+          <button
+            type="button"
+            onclick="closeCreateTaskModal()"
+            class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
+          >
+            取消
+          </button>
+          <button
+            id="btn-create-task"
+            type="submit"
+            class="px-5 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md transition active:scale-95"
+          >
+            立即创建并启动任务
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- 提示弹窗 Toast -->
   <div id="toast" class="fixed bottom-6 right-6 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 z-50">
     <span id="toast-icon" class="text-emerald-400"><i class="fa-solid fa-circle-check"></i></span>
@@ -282,6 +486,8 @@
 
   <script>
     let stateData = null;
+    let contactsData = [];
+    let pluginsData = [];
 
     function toggleCollapse(sectionId, iconId) {
       const section = document.getElementById(sectionId);
@@ -309,21 +515,38 @@
       toast.classList.remove("translate-y-20", "opacity-0");
       setTimeout(() => {
         toast.classList.add("translate-y-20", "opacity-0");
-      }, 3000);
+      }, 3500);
     }
 
+    // 核心数据聚合加载器
     async function loadData() {
       try {
-        const resp = await fetch("/api/status");
-        if (resp.status === 401) {
+        const [respStatus, respContacts, respPlugins] = await Promise.all([
+          fetch("/api/status"),
+          fetch("/api/contacts"),
+          fetch("/api/plugins"),
+        ]);
+
+        if (respStatus.status === 401) {
           window.location.href = "/login";
           return;
         }
-        if (!resp.ok) throw new Error("获取状态失败");
-        stateData = await resp.json();
+
+        if (respStatus.ok) {
+          stateData = await respStatus.json();
+        }
+        if (respContacts.ok) {
+          const cJson = await respContacts.json();
+          contactsData = cJson.contacts || [];
+        }
+        if (respPlugins.ok) {
+          const pJson = await respPlugins.json();
+          pluginsData = pJson.plugins || [];
+        }
+
         render();
       } catch (err) {
-        console.error("加载状态异常:", err);
+        console.error("加载监控平台状态异常:", err);
       }
     }
 
@@ -338,32 +561,46 @@
 
       tasksGrid.innerHTML = allTasks.map(t => {
         const isOk = t.last_status === 'success' || t.last_status === 'ready';
+        const isScheduled = (t.task_type === 'scheduled' || t.report_time);
+        const cycleText = t.enabled
+          ? (isScheduled ? '每天 ' + (t.report_time || '22:00') + ' 定时' : '每 ' + t.interval_seconds + 's 巡检')
+          : '已暂停';
+        const badgeStyle = t.enabled
+          ? (isScheduled ? 'bg-violet-50 text-violet-700 border border-violet-200' : 'bg-indigo-50 text-indigo-700 border border-indigo-200')
+          : 'bg-slate-100 text-slate-500 border border-slate-200';
+
+        // 格式化接收人标签显示
+        let notifyDisplay = '未指定 (回退默认)';
+        if (t.enable_notify === false) {
+          notifyDisplay = '<span class="text-slate-400">微信通知已关闭</span>';
+        } else if (t.contact_names && t.contact_names.length > 0) {
+          notifyDisplay = t.contact_names.map(name => `<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-medium text-[10px] mr-1">${name}</span>`).join('');
+        } else if (t.notify_targets && t.notify_targets.length > 0) {
+          notifyDisplay = `<span class="font-mono text-slate-600">${t.notify_targets.join(', ')}</span>`;
+        }
+
         return `
-          <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex items-center justify-between">
+          <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex items-center justify-between hover:border-slate-300 transition">
             <div class="space-y-1">
               <div class="flex items-center space-x-2">
                 <span class="w-2.5 h-2.5 rounded-full ${t.enabled ? (isOk ? 'bg-emerald-500' : 'bg-rose-500') : 'bg-slate-300'}"></span>
                 <span class="font-bold text-sm text-slate-800">${t.task_name}</span>
-                <span class="text-xs px-2 py-0.5 rounded font-mono ${t.enabled ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-500'}">
-                  ${t.enabled ? '每 ' + t.interval_seconds + 's' : '已暂停'}
+                <span class="text-xs px-2 py-0.5 rounded font-mono ${badgeStyle}">
+                  ${cycleText}
                 </span>
+                ${!t.is_builtin ? '<span class="text-[10px] px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200">自定义</span>' : ''}
               </div>
-              <div class="text-xs text-slate-500 flex items-center space-x-3">
-                <span>任务ID: <code class="text-slate-600">${t.task_id}</code></span>
+              <div class="text-xs text-slate-500 flex items-center space-x-2">
+                <span>ID: <code class="text-slate-600 font-mono">${t.task_id}</code></span>
                 <span>·</span>
-                <span>已巡检: ${t.run_count} 次</span>
+                <span>插件: <strong class="text-slate-700">${t.plugin_name || t.plugin_id || '内置'}</strong></span>
                 <span>·</span>
-                <span>状态: <span class="${isOk ? 'text-emerald-600' : 'text-rose-500'} font-medium">${t.last_status}</span></span>
+                <span>执行: ${t.run_count} 次</span>
               </div>
-              <div class="text-[11px] text-slate-500 flex items-center pt-1">
-                <i class="fa-brands fa-weixin mr-1.5 ${t.notify_count > 0 ? 'text-emerald-500' : 'text-slate-400'}"></i>
-                <span class="text-slate-400">接收人:</span>
-                <span class="ml-1 font-mono text-slate-700 font-medium">
-                  ${t.notify_targets && t.notify_targets.length > 0 ? t.notify_targets.join(', ') : '未指定 (回退全局默认)'}
-                </span>
-                <span class="ml-1 text-[10px] px-1.5 py-0.2 rounded ${t.is_custom_notify ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'}">
-                  ${t.is_custom_notify ? '专属指定' : '全局默认'}
-                </span>
+              <div class="text-[11px] text-slate-500 flex items-center pt-1 flex-wrap gap-y-1">
+                <i class="fa-brands fa-weixin mr-1.5 ${t.enable_notify !== false ? 'text-emerald-500' : 'text-slate-300'}"></i>
+                <span class="text-slate-400 mr-1">接收人:</span>
+                ${notifyDisplay}
               </div>
             </div>
             <div class="flex items-center space-x-2 shrink-0">
@@ -377,126 +614,29 @@
               ` : `
                 <span class="text-xs text-slate-400 px-2 py-1 bg-slate-50 rounded border border-slate-100">已暂停</span>
               `}
+              ${!t.is_builtin ? `
+                <button onclick="deleteCustomTask('${t.task_id}', '${t.task_name}')" class="px-2 py-1.5 text-xs text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition active:scale-95" title="删除自定义任务">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              ` : ''}
             </div>
           </div>
         `;
       }).join("");
 
-      // 渲染岗位卡片
-      const jobsContainer = document.getElementById("jobs-container");
-      const jobs = stateData.jobs || {};
-      const jobKeys = Object.keys(jobs);
-
-      if (jobKeys.length === 0) {
-        jobsContainer.innerHTML = `<div class="col-span-3 text-center py-12 text-slate-400">正在抓取岗位初始数据...</div>`;
-      } else {
-        jobsContainer.innerHTML = jobKeys.map(k => {
-          const job = jobs[k];
-          const isZero = job.post_num === 0;
-          const ratio = (job.post_num / (job.quantity || 1)).toFixed(1);
-
-          return `
-            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow relative flex flex-col justify-between">
-              <div>
-                <!-- 头部代码与标签 -->
-                <div class="flex items-center justify-between mb-3">
-                  <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold font-mono ${
-                    isZero ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'
-                  }">
-                    ${job.post_code}
-                  </span>
-                  ${isZero ? `
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-600 border border-rose-200">
-                      <i class="fa-solid fa-fire-flame-curved mr-1 text-[10px]"></i> 当前无人报名
-                    </span>
-                  ` : `
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      竞争比 ${ratio}:1
-                    </span>
-                  `}
-                </div>
-
-                <!-- 岗位标题与单位 -->
-                <h4 class="text-lg font-bold text-slate-900 leading-snug">${job.post}</h4>
-                <div class="text-xs text-slate-500 mt-1 flex items-center space-x-2">
-                  <span><i class="fa-solid fa-location-dot text-slate-400 mr-1"></i>${job.station}</span>
-                  <span>·</span>
-                  <span><i class="fa-solid fa-graduation-cap text-slate-400 mr-1"></i>${job.education}</span>
-                </div>
-
-                <!-- 报名关键数值展示 -->
-                <div class="mt-6 mb-4 grid grid-cols-2 gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                  <div>
-                    <div class="text-xs text-slate-400 font-medium">当前报名人数</div>
-                    <div class="text-3xl font-extrabold font-mono mt-1 ${isZero ? 'text-amber-600' : 'text-slate-900'}">
-                      ${job.post_num} <span class="text-xs font-normal text-slate-500">人</span>
-                    </div>
-                  </div>
-                  <div>
-                    <div class="text-xs text-slate-400 font-medium">招考计划人数</div>
-                    <div class="text-3xl font-extrabold font-mono mt-1 text-slate-900">
-                      ${job.quantity} <span class="text-xs font-normal text-slate-500">人</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 专业要求摘要 -->
-                <div class="text-xs text-slate-600 line-clamp-2 mb-4 leading-relaxed" title="${job.subject}">
-                  <strong class="text-slate-700">专业:</strong> ${job.subject}
-                </div>
-              </div>
-
-              <!-- 底部操作与更新时间 -->
-              <div class="pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span class="text-slate-400 font-mono">${job.last_checked ? job.last_checked.split(' ')[1] : ''}</span>
-                <a href="${job.query_url}" target="_blank" class="text-indigo-600 hover:text-indigo-800 font-medium inline-flex items-center">
-                  查看官方接口 <i class="fa-solid fa-arrow-up-right-from-square ml-1 text-[10px]"></i>
-                </a>
-              </div>
-            </div>
-          `;
-        }).join("");
-      }
-
-      // 渲染历史记录
-      const history = stateData.history || [];
-      document.getElementById("history-count").innerText = `${history.length} 条变动`;
-      const tbody = document.getElementById("history-tbody");
-
-      if (history.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="5" class="px-6 py-8 text-center text-slate-400">
-              <i class="fa-regular fa-folder-open text-2xl mb-2 block"></i>
-              暂无人数变动记录（当前报名人数保持稳定）
-            </td>
-          </tr>
-        `;
-      } else {
-        tbody.innerHTML = history.map(item => `
-          <tr class="hover:bg-slate-50/80 transition-colors">
-            <td class="px-6 py-3 font-mono text-xs text-slate-500">${item.time}</td>
-            <td class="px-6 py-3 font-mono font-semibold text-slate-700">${item.post_code}</td>
-            <td class="px-6 py-3 text-slate-900 font-medium">${item.post_name}</td>
-            <td class="px-6 py-3">
-              <span class="inline-flex items-center font-mono font-bold text-indigo-700 px-2 py-0.5 bg-indigo-50 rounded">
-                ${item.change_text || (item.old_num + '人 -> ' + item.new_num + '人')}
-              </span>
-            </td>
-            <td class="px-6 py-3">
-              ${item.notified ? `
-                <span class="inline-flex items-center text-xs font-semibold text-emerald-600">
-                  <i class="fa-solid fa-check-circle mr-1"></i> 微信已推送
-                </span>
-              ` : `
-                <span class="inline-flex items-center text-xs font-semibold text-rose-500">
-                  <i class="fa-solid fa-times-circle mr-1"></i> 推送未成功
-                </span>
-              `}
-            </td>
-          </tr>
-        `).join("");
-      }
+      // 动态向所有业务面板派发状态
+      const taskStates = stateData.task_states || {};
+      allTasks.forEach(t => {
+        const fnName = 'renderPanel_' + t.task_id;
+        if (typeof window[fnName] === 'function') {
+          const tState = taskStates[t.task_id] || {};
+          try {
+            window[fnName](tState, t);
+          } catch (err) {
+            console.error(`渲染面板 [${t.task_id}] 异常:`, err);
+          }
+        }
+      });
     }
 
     async function triggerCheck(taskId = 'jd_offer_3jobs') {
@@ -504,9 +644,12 @@
       const icon = document.getElementById("btn-icon");
       const text = document.getElementById("btn-text");
 
-      btn.disabled = true;
-      icon.classList.add("fa-spin");
-      text.innerText = "检测中...";
+      const isTopBtn = (taskId === 'jd_offer_3jobs' && btn);
+      if (isTopBtn) {
+        btn.disabled = true;
+        icon.classList.add("fa-spin");
+        text.innerText = "执行中...";
+      }
 
       try {
         const resp = await fetch(`/api/tasks/${taskId}/check-now`, { method: "POST" });
@@ -520,13 +663,281 @@
       } catch (e) {
         showToast("请求服务异常", true);
       } finally {
-        btn.disabled = false;
-        icon.classList.remove("fa-spin");
-        text.innerText = "立即检测招考岗位";
+        if (isTopBtn) {
+          btn.disabled = false;
+          icon.classList.remove("fa-spin");
+          text.innerText = "检测岗位";
+        }
       }
     }
 
-    // ------ 任务配置模态框控制逻辑 ------
+    // ==========================================
+    // 通讯录管理控制逻辑 (Contacts)
+    // ==========================================
+    function openContactsModal() {
+      renderContactsTable();
+      document.getElementById("contacts-modal").classList.remove("hidden");
+    }
+
+    function closeContactsModal() {
+      document.getElementById("contacts-modal").classList.add("hidden");
+    }
+
+    function renderContactsTable() {
+      const tbody = document.getElementById("contacts-table-body");
+      if (!contactsData || contactsData.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="4" class="p-6 text-center text-slate-400">
+              通讯录暂无联系人，请在下方快速添加
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = contactsData.map(c => {
+        const maskedOid = c.openid.length > 10 ? `${c.openid.slice(0, 5)}...${c.openid.slice(-4)}` : c.openid;
+        return `
+          <tr class="hover:bg-slate-50 transition-colors">
+            <td class="p-3 pl-4 font-bold text-slate-800">
+              <div class="flex items-center space-x-2">
+                <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-[10px]">
+                  ${c.name.slice(0, 1)}
+                </span>
+                <span>${c.name}</span>
+              </div>
+            </td>
+            <td class="p-3 font-mono text-slate-600" title="${c.openid}">${maskedOid}</td>
+            <td class="p-3 text-slate-500 hidden sm:table-cell">${c.remark || '-'}</td>
+            <td class="p-3 text-right pr-4 space-x-2">
+              <button
+                type="button"
+                onclick="testSingleContact('${c.id}', '${c.name}')"
+                class="px-2 py-1 text-xs font-medium text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition"
+                title="发送微信连通测试"
+              >
+                <i class="fa-solid fa-paper-plane mr-1 text-[10px]"></i>测试
+              </button>
+              <button
+                type="button"
+                onclick="deleteContact('${c.id}', '${c.name}')"
+                class="px-2 py-1 text-xs font-medium text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition"
+                title="删除联系人"
+              >
+                <i class="fa-solid fa-trash-can text-[11px]"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    async function submitAddContact(e) {
+      e.preventDefault();
+      const name = document.getElementById("nc-name").value.trim();
+      const openid = document.getElementById("nc-openid").value.trim();
+      const remark = document.getElementById("nc-remark").value.trim();
+
+      if (!name || !openid) {
+        showToast("请填写姓名与 OpenID", true);
+        return;
+      }
+
+      try {
+        const resp = await fetch("/api/contacts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, openid, remark }),
+        });
+        const data = await resp.json();
+        if (resp.ok && data.success) {
+          showToast(`已成功添加联系人【${name}】！`);
+          document.getElementById("nc-name").value = "";
+          document.getElementById("nc-openid").value = "";
+          document.getElementById("nc-remark").value = "";
+          await loadData();
+          renderContactsTable();
+        } else {
+          showToast("添加失败: " + (data.error || "未知错误"), true);
+        }
+      } catch (err) {
+        showToast("网络请求异常", true);
+      }
+    }
+
+    async function deleteContact(contactId, name) {
+      if (!confirm(`确定要从通讯录中删除联系人【${name}】吗？`)) return;
+
+      try {
+        const resp = await fetch(`/api/contacts/${contactId}`, { method: "DELETE" });
+        const data = await resp.json();
+        if (resp.ok && data.success) {
+          showToast(`已删除联系人【${name}】`);
+          await loadData();
+          renderContactsTable();
+        } else {
+          showToast("删除失败: " + (data.error || "未知错误"), true);
+        }
+      } catch (err) {
+        showToast("网络请求异常", true);
+      }
+    }
+
+    async function testSingleContact(contactId, name) {
+      showToast(`正在向【${name}】发送微信测试消息...`);
+      try {
+        const resp = await fetch(`/api/contacts/${contactId}/test`, { method: "POST" });
+        const data = await resp.json();
+        if (resp.ok && data.success) {
+          showToast(`已成功向【${name}】发送微信握手卡片！`);
+        } else {
+          showToast(`发送失败: ${data.err_msg || data.error || '请确认微信OpenID正确且已关注'}`, true);
+        }
+      } catch (err) {
+        showToast("请求服务异常", true);
+      }
+    }
+
+    // ==========================================
+    // 新建监控任务控制逻辑 (Create Task)
+    // ==========================================
+    function openCreateTaskModal() {
+      // 填充脚本插件下拉框
+      const sel = document.getElementById("nt-plugin");
+      sel.innerHTML = pluginsData.map(p => `
+        <option value="${p.plugin_id}">${p.plugin_name} (ID: ${p.plugin_id})</option>
+      `).join("");
+
+      // 填充联系人复选框
+      const cBoxContainer = document.getElementById("nt-contacts-checkboxes");
+      if (!contactsData || contactsData.length === 0) {
+        cBoxContainer.innerHTML = '<span class="text-xs text-slate-400">通讯录暂无联系人，将默认发送给全局管理员</span>';
+      } else {
+        cBoxContainer.innerHTML = contactsData.map(c => `
+          <label class="inline-flex items-center px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs cursor-pointer hover:border-indigo-400 transition">
+            <input type="checkbox" name="nt-contacts" value="${c.id}" class="rounded text-indigo-600 focus:ring-indigo-500 mr-1.5">
+            <span class="font-medium text-slate-700">${c.name}</span>
+          </label>
+        `).join("");
+      }
+
+      onPluginSelectChange();
+      document.getElementById("create-task-modal").classList.remove("hidden");
+    }
+
+    function closeCreateTaskModal() {
+      document.getElementById("create-task-modal").classList.add("hidden");
+    }
+
+    function onPluginSelectChange() {
+      const pluginId = document.getElementById("nt-plugin").value;
+      const plugin = pluginsData.find(p => p.plugin_id === pluginId);
+      const descBox = document.getElementById("nt-plugin-desc");
+
+      if (!plugin) {
+        descBox.innerHTML = '请选择脚本插件';
+        return;
+      }
+
+      descBox.innerHTML = `
+        <div class="font-semibold text-slate-700">${plugin.plugin_name} <span class="font-normal text-slate-400">(v${plugin.version} · 作者: ${plugin.author})</span></div>
+        <p class="text-slate-500 text-[11px] leading-relaxed">${plugin.description}</p>
+      `;
+
+      // 自动自适应默认调度类型与时间
+      if (plugin.default_type === 'scheduled') {
+        document.querySelector('input[name="nt-schedule-type"][value="scheduled"]').checked = true;
+        toggleCreateScheduleType('scheduled');
+        document.getElementById("nt-report-time").value = plugin.default_report_time || "22:00";
+      } else {
+        document.querySelector('input[name="nt-schedule-type"][value="interval"]').checked = true;
+        toggleCreateScheduleType('interval');
+        document.getElementById("nt-interval").value = plugin.default_interval || 60;
+      }
+    }
+
+    function toggleCreateScheduleType(type) {
+      const grpInterval = document.getElementById("nt-group-interval");
+      const grpReportTime = document.getElementById("nt-group-report-time");
+      if (type === 'scheduled') {
+        grpReportTime.classList.remove("hidden");
+        grpInterval.classList.add("hidden");
+      } else {
+        grpInterval.classList.remove("hidden");
+        grpReportTime.classList.add("hidden");
+      }
+    }
+
+    async function submitCreateTaskForm(e) {
+      e.preventDefault();
+      const btn = document.getElementById("btn-create-task");
+      btn.disabled = true;
+      btn.innerText = "正在创建并挂载协程...";
+
+      const task_name = document.getElementById("nt-name").value.trim();
+      const plugin_id = document.getElementById("nt-plugin").value;
+      const task_type = document.querySelector('input[name="nt-schedule-type"]:checked').value;
+      const interval_seconds = parseInt(document.getElementById("nt-interval").value, 10) || 60;
+      const report_time = document.getElementById("nt-report-time").value.trim() || "22:00";
+      const enable_notify = document.getElementById("nt-enable-notify").checked;
+
+      // 收集选中的联系人 ID
+      const checkedContacts = Array.from(document.querySelectorAll('input[name="nt-contacts"]:checked')).map(el => el.value);
+
+      const payload = {
+        task_name,
+        plugin_id,
+        task_type,
+        interval_seconds,
+        report_time,
+        enabled: true,
+        enable_notify,
+        notify_contact_ids: checkedContacts,
+      };
+
+      try {
+        const resp = await fetch("/api/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await resp.json();
+        if (resp.ok && data.success) {
+          showToast(`监控任务【${task_name}】创建成功并已即刻启动调度！`);
+          closeCreateTaskModal();
+          await loadData();
+        } else {
+          showToast("创建任务失败: " + (data.error || "未知错误"), true);
+        }
+      } catch (err) {
+        showToast("请求失败，请检查服务状态", true);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "立即创建并启动任务";
+      }
+    }
+
+    async function deleteCustomTask(taskId, taskName) {
+      if (!confirm(`确定要彻底删除自定义监控任务【${taskName}】(${taskId}) 吗？`)) return;
+
+      try {
+        const resp = await fetch(`/api/tasks/${taskId}`, { method: "DELETE" });
+        const data = await resp.json();
+        if (resp.ok && data.success) {
+          showToast(`任务【${taskName}】已删除并已注销后台协程`);
+          await loadData();
+        } else {
+          showToast("删除任务失败: " + (data.error || "未知错误"), true);
+        }
+      } catch (err) {
+        showToast("网络请求异常", true);
+      }
+    }
+
+    // ==========================================
+    // 任务配置模态框控制逻辑 (Task Config)
+    // ==========================================
     let currentConfigTaskId = null;
 
     async function openConfigModal(taskId) {
@@ -549,8 +960,38 @@
           const cfg = data.config;
           document.getElementById("modal-task-name").innerText = cfg.task_name || "配置监控任务";
           document.getElementById("cfg-enabled").checked = Boolean(cfg.enabled);
-          document.getElementById("cfg-interval").value = cfg.interval_seconds || 60;
-          document.getElementById("cfg-openids").value = cfg.raw_openids_text || "";
+
+          const isScheduled = (cfg.task_type === 'scheduled' || cfg.report_time);
+          const groupReportTime = document.getElementById("cfg-group-report-time");
+          const groupInterval = document.getElementById("cfg-group-interval");
+
+          if (isScheduled) {
+            groupReportTime.classList.remove("hidden");
+            groupInterval.classList.add("hidden");
+            document.getElementById("cfg-report-time").value = cfg.report_time || "22:00";
+          } else {
+            groupReportTime.classList.add("hidden");
+            groupInterval.classList.remove("hidden");
+            document.getElementById("cfg-interval").value = cfg.interval_seconds || 60;
+          }
+
+          // 渲染通讯录联系人复选框
+          const targetIds = cfg.notify_contact_ids || [];
+          const container = document.getElementById("cfg-contacts-checkboxes");
+          if (!contactsData || contactsData.length === 0) {
+            container.innerHTML = '<span class="text-xs text-slate-400">通讯录暂无联系人，将默认发送给全局管理员</span>';
+          } else {
+            container.innerHTML = contactsData.map(c => {
+              const isChecked = targetIds.includes(c.id);
+              return `
+                <label class="inline-flex items-center px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs cursor-pointer hover:border-indigo-400 transition">
+                  <input type="checkbox" name="cfg-contacts" value="${c.id}" ${isChecked ? 'checked' : ''} class="rounded text-indigo-600 focus:ring-indigo-500 mr-1.5">
+                  <span class="font-medium text-slate-700">${c.name}</span>
+                </label>
+              `;
+            }).join("");
+          }
+
         } else {
           showToast("获取任务配置失败: " + data.error, true);
           closeConfigModal();
@@ -576,18 +1017,29 @@
       btn.innerText = "保存中...";
 
       const enabled = document.getElementById("cfg-enabled").checked;
-      const interval_seconds = parseInt(document.getElementById("cfg-interval").value, 10);
-      const notify_openids = document.getElementById("cfg-openids").value.trim();
+      const checkedContacts = Array.from(document.querySelectorAll('input[name="cfg-contacts"]:checked')).map(el => el.value);
+
+      const payload = {
+        enabled: enabled,
+        notify_contact_ids: checkedContacts,
+        enable_notify: true,
+      };
+
+      const groupInterval = document.getElementById("cfg-group-interval");
+      if (!groupInterval.classList.contains("hidden")) {
+        payload.interval_seconds = parseInt(document.getElementById("cfg-interval").value, 10);
+      }
+
+      const groupReportTime = document.getElementById("cfg-group-report-time");
+      if (!groupReportTime.classList.contains("hidden")) {
+        payload.report_time = document.getElementById("cfg-report-time").value.trim() || "22:00";
+      }
 
       try {
         const resp = await fetch(`/api/tasks/${currentConfigTaskId}/config`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            enabled: enabled,
-            interval_seconds: interval_seconds,
-            notify_openids: notify_openids,
-          }),
+          body: JSON.stringify(payload),
         });
 
         const data = await resp.json();
@@ -611,13 +1063,13 @@
       const btn = document.getElementById("btn-test-send");
       const originalHtml = btn.innerHTML;
       btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i>正在发送测试...';
+      btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i>发送中...';
 
       try {
         const resp = await fetch(`/api/tasks/${currentConfigTaskId}/test-notify`, { method: "POST" });
         const data = await resp.json();
         if (resp.ok && data.success) {
-          showToast(`测试通知已成功推送到微信: ${data.targets.join(", ")}`);
+          showToast(`测试卡片已成功推送到微信！`);
         } else {
           showToast(`微信测试发送失败: ${data.err_msg || data.error || '请检查openid'}`, true);
         }

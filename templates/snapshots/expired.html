@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>快照已过期 · WatchPatrol</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen font-sans antialiased p-4 flex items-center justify-center">
+
+  <div class="w-full max-w-sm bg-white rounded-3xl p-8 shadow-sm border border-slate-200/80 text-center space-y-4">
+    <div class="w-16 h-16 rounded-2xl bg-amber-50 text-amber-500 mx-auto flex items-center justify-center text-2xl">
+      <i class="fa-solid fa-hourglass-end"></i>
+    </div>
+
+    <div class="space-y-1">
+      <h2 class="text-lg font-bold text-slate-900">该页面快照已过期</h2>
+      <p class="text-xs text-slate-500 leading-relaxed">
+        为了保障业务数据私密性与时效性，系统推送的详情快照仅支持 24 小时内查阅，过期后已自动从磁盘安全物理销毁。
+      </p>
+    </div>
+
+    {% if expire_at %}
+    <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-[11px] text-slate-400 font-mono">
+      失效时间: {{ expire_at }}
+    </div>
+    {% endif %}
+
+    <div class="pt-2">
+      <a
+        href="/"
+        class="inline-flex items-center justify-center px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow transition"
+      >
+        <i class="fa-solid fa-house mr-1.5 text-xs"></i>
+        进入 WatchPatrol 控制台
+      </a>
+    </div>
+  </div>
+
+</body>
+</html>

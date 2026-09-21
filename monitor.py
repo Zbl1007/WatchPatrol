@@ -9,11 +9,7 @@ import logging
 import argparse
 
 from core.task_manager import task_manager
-import tasks  # 触发任务自动发现与注册
-from tasks import jd_offer_task
-from tasks.jd_offer_task import JdOfferMonitorTask
-
-monitor_service = jd_offer_task
+import tasks  # 触发任务插件目录自动扫描与注册
 
 logging.basicConfig(
     level=logging.INFO,

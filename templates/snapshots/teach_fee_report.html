@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>{{ snapshot.title }} · 移动端运营大屏</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen font-sans antialiased p-3 sm:p-6 flex justify-center">
+
+  <div class="w-full max-w-lg space-y-4">
+    
+    <!-- 顶部状态栏 -->
+    <div class="flex items-center justify-between px-1 text-xs text-slate-500">
+      <div class="flex items-center space-x-1.5">
+        <span class="w-2 h-2 rounded-full bg-violet-500 animate-pulse"></span>
+        <span class="font-medium text-slate-700">课时费系统 · 每日运营快照</span>
+      </div>
+      <div class="flex items-center space-x-1 text-slate-400">
+        <i class="fa-regular fa-clock text-[11px]"></i>
+        <span>时效24小时</span>
+      </div>
+    </div>
+
+    <!-- 运营日报主卡片 -->
+    <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 space-y-5">
+      
+      <!-- 头部系统名称与日期 -->
+      <div>
+        <div class="flex items-center space-x-2">
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-200">
+            <i class="fa-solid fa-calculator mr-1 text-[10px]"></i> 课时费计算管理平台
+          </span>
+          <span class="text-xs text-slate-400 font-mono">{{ metrics.date or snapshot.created_at[:10] }}</span>
+        </div>
+        <h1 class="text-xl font-extrabold text-slate-900 mt-2 tracking-tight">
+          每日核心运营指标汇总日报
+        </h1>
+        <p class="text-xs text-slate-400 mt-1">
+          数据来源于平台后端带密钥的只读聚合接口，每日晚间定时快照归档。
+        </p>
+      </div>
+
+      <!-- 5 项核心指标网格 -->
+      <div class="grid grid-cols-2 gap-3">
+        
+        <!-- 1. 今日新增用户 -->
+        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col justify-between">
+          <div class="text-xs text-slate-400 flex items-center justify-between">
+            <span>今日新增用户</span>
+            <i class="fa-solid fa-user-plus text-slate-300"></i>
+          </div>
+          <div class="my-1.5">
+            <span class="text-3xl font-black font-mono text-slate-900">{{ metrics.new_users_today or 0 }}</span>
+            <span class="text-xs text-slate-400 ml-0.5">人</span>
+          </div>
+          <div class="text-[11px] text-slate-400">
+            总用户数: <strong class="text-slate-600 font-semibold">{{ metrics.total_users or '--' }}</strong> 人
+          </div>
+        </div>
+
+        <!-- 2. 今日 AI 调用量 -->
+        <div class="p-4 bg-violet-50/50 rounded-2xl border border-violet-100 flex flex-col justify-between">
+          <div class="text-xs text-violet-600 font-medium flex items-center justify-between">
+            <span>今日 AI 调用</span>
+            <i class="fa-solid fa-wand-magic-sparkles text-violet-400"></i>
+          </div>
+          <div class="my-1.5">
+            <span class="text-3xl font-black font-mono text-violet-700">{{ metrics.ai_usage_today or 0 }}</span>
+            <span class="text-xs text-violet-400 ml-0.5">次</span>
+          </div>
+          <div class="text-[11px] text-violet-500">
+            反馈 {{ metrics.ai_breakdown.feedback_generation if metrics.ai_breakdown else 0 }} / 对话 {{ metrics.ai_breakdown.agent_chat if metrics.ai_breakdown else 0 }}
+          </div>
+        </div>
+
+        <!-- 3. 今日新增课时 -->
+        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col justify-between">
+          <div class="text-xs text-slate-400 flex items-center justify-between">
+            <span>今日记课流水</span>
+            <i class="fa-solid fa-file-invoice text-slate-300"></i>
+          </div>
+          <div class="my-1.5">
+            <span class="text-3xl font-black font-mono text-indigo-600">{{ metrics.new_class_records_today or 0 }}</span>
+            <span class="text-xs text-slate-400 ml-0.5">条</span>
+          </div>
+          <div class="text-[11px] text-slate-400">
+            教师端实时课时记录
+          </div>
+        </div>
+
+        <!-- 4. 今日活跃人数 -->
+        <div class="p-4 bg-amber-50/40 rounded-2xl border border-amber-100 flex flex-col justify-between">
+          <div class="text-xs text-amber-600 font-medium flex items-center justify-between">
+            <span>今日活跃用户</span>
+            <i class="fa-solid fa-fire text-amber-400"></i>
+          </div>
+          <div class="my-1.5">
+            <span class="text-3xl font-black font-mono text-amber-600">{{ metrics.active_users_today or 0 }}</span>
+            <span class="text-xs text-amber-400 ml-0.5">人</span>
+          </div>
+          <div class="text-[11px] text-amber-500">
+            去重独立操作用户
+          </div>
+        </div>
+
+        <!-- 5. 今日开通订阅 (占满整行) -->
+        <div class="col-span-2 p-4 bg-emerald-50/40 rounded-2xl border border-emerald-100 flex items-center justify-between">
+          <div>
+            <div class="text-xs text-emerald-600 font-medium flex items-center">
+              <i class="fa-solid fa-gem mr-1.5 text-emerald-500"></i>
+              今日开通订阅
+            </div>
+            <div class="mt-1">
+              <span class="text-3xl font-black font-mono text-emerald-700">{{ metrics.new_subscriptions_today or 0 }}</span>
+              <span class="text-xs text-emerald-600 ml-0.5">人付费转化</span>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-xs text-emerald-600">充值流水收入</div>
+            <div class="text-2xl font-black font-mono text-emerald-700 mt-1">
+              ¥{{ "%.1f"|format(metrics.subscription_income_today or 0.0) }}
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 跳转管理后台按钮 -->
+      <div class="pt-2">
+        <a
+          href="https://dam.520315.xyz"
+          target="_blank"
+          class="w-full flex items-center justify-center px-4 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl font-bold text-sm shadow-md shadow-violet-100 transition active:scale-98"
+        >
+          <i class="fa-solid fa-arrow-up-right-from-square mr-2 text-xs"></i>
+          登录课时费系统管理后台
+        </a>
+      </div>
+
+    </div>
+
+    <!-- 快照时效说明卡片 -->
+    <div class="px-4 py-3 bg-white/70 backdrop-blur rounded-2xl border border-slate-200/60 text-center text-xs text-slate-400 space-y-1">
+      <div>快照生成时间：<span class="font-mono text-slate-600 font-medium">{{ snapshot.created_at }}</span></div>
+      <div class="text-[11px] text-amber-600">
+        <i class="fa-solid fa-clock-rotate-left mr-1"></i>本快照具备 24 小时时效性，将于 <span class="font-mono">{{ snapshot.expire_at }}</span> 自动销毁删除
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

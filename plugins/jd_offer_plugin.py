@@ -1,24 +1,24 @@
 """
-招录重点岗位报名监控任务插件
-继承自 BaseTask，负责目标招考岗位的实时报名人数监控与微信模板消息推送。
+重点招录岗位报名监控插件
+继承自 BasePlugin，负责监控指定招考岗位的实时报名人数变动并自动推送微信模板消息。
 """
 
 import os
 import asyncio
 import logging
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 from datetime import datetime
 import httpx
 
-from core.base_task import BaseTask
+from core.plugin_base import BasePlugin
 from core.snapshot_manager import snapshot_manager
 from notifier import send_job_alert, format_enroll_status
 
-logger = logging.getLogger("tasks.jd_offer")
+logger = logging.getLogger("plugins.jd_offer")
 
 API_BASE_URL = "http://211.166.6.109:9998/enroll/post/listVisitor"
 
-TARGET_JOBS = [
+DEFAULT_TARGET_JOBS = [
     {
         "id": "00cde71d64bd53fce6e4afb8e06baf51",
         "post_code": "QDG20260079",
@@ -40,35 +40,21 @@ TARGET_JOBS = [
 ]
 
 
-class JdOfferMonitorTask(BaseTask):
-    """重点招考岗位监控任务"""
+class JdOfferPlugin(BasePlugin):
+    """重点岗位招录监控插件"""
 
-    task_id = "jd_offer_3jobs"
-    task_name = "重点岗位招录监控"
-    interval_seconds = 60
-    enabled = True
-
-    # 专属通知目标：若设为 None，系统将自动读取 .env 中的全局 WECHAT_OPENID
-    # 也可在 Web 控制台点击「配置」随时为该任务动态分配与修改接收人
-    notify_openids = None
-
-    def __init__(self, targets: Optional[List[Dict[str, str]]] = None):
-        super().__init__()
-        # 保持与已有 data/jobs_state.json 文件的向后完全兼容
-        self.state_file = self.data_dir / "jobs_state.json"
-        self.targets = targets or TARGET_JOBS
-        self.state = self.load_state()
-
-    def load_state(self) -> Dict[str, Any]:
-        """扩展基类状态结构，包含 jobs 字典"""
-        state = super().load_state()
-        state.setdefault("jobs", {})
-        return state
+    plugin_id = "jd_offer"
+    plugin_name = "重点岗位招录监控"
+    description = "定时抓取官方招考接口，比对目标岗位报考人数增减，出现变动即刻推送微信卡片与时效快照。"
+    author = "系统内置"
+    version = "2.0.0"
+    supported_types = ["interval"]
+    default_type = "interval"
+    default_interval = 60
 
     async def fetch_single_job(
         self, client: httpx.AsyncClient, target: Dict[str, str]
-    ) -> Optional[Dict[str, Any]]:
-        """向官方接口精确查询指定岗位代码数据"""
+    ) -> Any:
         job_id = target["id"]
         post_code = target["post_code"]
         url = f"{API_BASE_URL}?queryStr={post_code}"
@@ -104,24 +90,29 @@ class JdOfferMonitorTask(BaseTask):
                         "last_checked": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     }
 
-            logger.warning("[%s] 接口未返回目标岗位: %s (%s)", self.task_id, job_id, post_code)
             return None
         except Exception as e:
-            logger.error("[%s] 请求官方接口异常 [%s]: %s", self.task_id, post_code, e)
+            logger.error("[%s] 抓取岗位 [%s] 异常: %s", self.plugin_id, post_code, e)
             return None
 
-    async def execute_check(self) -> Dict[str, Any]:
-        """执行全量岗位抓取、人数比对与变动推送"""
+    async def run(self, context: Dict[str, Any], config: Dict[str, Any]) -> Dict[str, Any]:
+        task_id = context.get("task_id", "jd_offer")
+        state = context.get("state", {})
+        notify_openids = context.get("notify_openids", [])
+        save_state = context.get("save_state")
+        record_history = context.get("record_history")
+
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        targets = config.get("targets") or DEFAULT_TARGET_JOBS
 
         async with httpx.AsyncClient() as client:
-            tasks = [self.fetch_single_job(client, t) for t in self.targets]
+            tasks = [self.fetch_single_job(client, t) for t in targets]
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
         changes = []
-        jobs_dict = self.state.setdefault("jobs", {})
+        jobs_dict = state.setdefault("jobs", {})
 
-        for target, res in zip(self.targets, results):
+        for target, res in zip(targets, results):
             if isinstance(res, Exception) or not res:
                 continue
 
@@ -134,8 +125,6 @@ class JdOfferMonitorTask(BaseTask):
 
             old_job = jobs_dict.get(job_id)
             if not old_job:
-                # 首次收录基准值
-                logger.info("[%s] 首次收录基准岗位: %s (%s) 报名人数: %d", self.task_id, post_name, post_code, new_num)
                 jobs_dict[job_id] = res
             else:
                 old_num = old_job.get("post_num", 0)
@@ -145,32 +134,31 @@ class JdOfferMonitorTask(BaseTask):
                     change_text = format_enroll_status(old_num, new_num, quantity)
                     logger.warning(
                         "[%s 告警] %s (%s) 报名人数变动: %s",
-                        self.task_id,
-                        post_name,
-                        post_code,
-                        change_text,
+                        task_id, post_name, post_code, change_text
                     )
 
-                    # 为本次岗位变动生成 24 小时专属移动端快照，告别乱码 JSON 接口
+                    # 生成 24 小时专属快照
                     snap_id = snapshot_manager.create_snapshot(
-                        task_id=self.task_id,
+                        task_id=task_id,
                         title=f"{post_name} ({post_code}) 岗位变动快照",
                         data=res,
                         ttl_hours=24,
                     )
                     snap_url = snapshot_manager.get_snapshot_url(snap_id)
 
-                    # 触发微信专属模板推送（仅推给本任务绑定的接收人）
-                    push_res = await send_job_alert(
-                        unit=unit,
-                        post=f"{post_name} (代码: {post_code})",
-                        enroll_status=change_text,
-                        change_time=now_str,
-                        remark="点击卡片即可在微信中直接查看美观的岗位详情\n本快照具备 24 小时时效性",
-                        click_url=snap_url,
-                        to=self.get_notify_openids(),
-                        template_id=os.getenv("WECHAT_TEMPLATE_ID"),
-                    )
+                    # 仅在配置了通知目标时推送
+                    push_res = None
+                    if notify_openids:
+                        push_res = await send_job_alert(
+                            unit=unit,
+                            post=f"{post_name} (代码: {post_code})",
+                            enroll_status=change_text,
+                            change_time=now_str,
+                            remark="点击卡片即可在微信中直接查看美观的岗位详情\n本快照具备 24 小时时效性",
+                            click_url=snap_url,
+                            to=notify_openids,
+                            template_id=os.getenv("WECHAT_TEMPLATE_ID"),
+                        )
 
                     change_record = {
                         "time": now_str,
@@ -181,17 +169,16 @@ class JdOfferMonitorTask(BaseTask):
                         "old_num": old_num,
                         "new_num": new_num,
                         "change_text": change_text,
-                        "notified": push_res.success,
-                        "notified_targets": self.get_masked_notify_targets(),
-                        "msg_id": push_res.msg_id,
+                        "notified": push_res.success if push_res else False,
+                        "msg_id": push_res.msg_id if push_res else "",
                     }
                     changes.append(change_record)
-                    self.record_history(change_record)
-                else:
-                    logger.info("[%s] %s (%s) 报名人数稳定: %d 人", self.task_id, post_name, post_code, new_num)
+                    if callable(record_history):
+                        record_history(change_record)
 
-        self.state["jobs"] = jobs_dict
-        self.save_state()
+        state["jobs"] = jobs_dict
+        if callable(save_state):
+            save_state()
 
         return {
             "monitored_count": len(jobs_dict),

@@ -65,6 +65,7 @@ async def send_job_alert(
     title: str = "【招考变动】岗位报名人数发生变化！",
     to: Optional[str] = None,
     click_url: Optional[str] = None,
+    template_id: Optional[str] = None,
 ) -> WeChatResult:
     """
     异步发送专属岗位变动提醒消息
@@ -78,6 +79,7 @@ async def send_job_alert(
         title=title,
         to=to,
         click_url=click_url,
+        template_id=template_id,
     )
 
 

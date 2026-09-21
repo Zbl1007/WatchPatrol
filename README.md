@@ -38,7 +38,7 @@ WatchPatrol/
 
 未来如果您有任何新的监控需求（例如：笔试成绩发布、其他岗位轮询、面试名单公示等），只需 **两步**：
 
-### 第一步：在 `tasks/` 目录下新建一个文件（如 `tasks/my_new_task.py`）
+### 只需要一步：在 `tasks/` 目录下新建一个文件（如 `tasks/my_new_task.py`）
 
 直接参考 `tasks/example_task.py` 的格式继承 `BaseTask`：
 
@@ -72,15 +72,9 @@ class MyNewTask(BaseTask):
         return {"status": "ok"}
 ```
 
-### 第二步：在 `tasks/__init__.py` 中注册该任务
-
-```python
-from .my_new_task import MyNewTask
-
-my_task = MyNewTask()
-task_manager.register(my_task)
-```
-完成！系统调度中心会自动为它分配独立的协程工作流，Web 控制台也会自动呈现该任务的运行状态。
+**就这一步，搞定！无需修改 `__init__.py`！**
+系统启动时会**自动扫描并注册** `tasks/` 目录下的所有任务脚本。
+系统调度中心会自动为新任务分配独立的协程工作流，Web 控制台也会自动呈现该任务的运行状态卡片。
 
 ---
 

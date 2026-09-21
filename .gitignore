@@ -21,6 +21,7 @@
 data/*.json
 data/*.tmp
 data/*.bak
+data/snapshots/
 # 保留 data 目录占位符
 !data/.gitkeep
 

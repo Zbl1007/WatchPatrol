@@ -164,23 +164,13 @@ class WeChatNotifier:
         remark: str = "",
         click_url: Optional[str] = None,
         template_data: Optional[Dict[str, Any]] = None,
+        template_id: Optional[str] = None,
     ) -> WeChatResult:
         """
         异步发送微信模板消息。支持单个 openid 或多个 openid 列表。
-
-        Args:
-            title: 消息标题（对应模板 first.DATA）
-            content: 消息核心内容（对应模板 keyword2.DATA）
-            to: 指定接收人 openid (支持 str 或 List[str])，留空时使用 default_openid
-            event_type: 通知分类/业务类型（对应模板 keyword1.DATA）
-            remark: 备注提示（对应模板 remark.DATA）
-            click_url: 点击该消息后跳转的网页链接
-            template_data: 完全自定义模板数据字典。传入时优先于默认 5 字段映射。
-
-        Returns:
-            WeChatResult: 结构化发送结果对象
         """
-        if not self.is_configured():
+        active_template_id = template_id or self.template_id
+        if not self.is_configured() and not active_template_id:
             return WeChatResult(
                 success=False,
                 err_code=-2,
@@ -223,7 +213,7 @@ class WeChatNotifier:
         if len(target_list) == 1:
             body = {
                 "touser": target_list[0],
-                "template_id": self.template_id,
+                "template_id": active_template_id,
                 "url": url_target,
                 "data": template_data,
             }
@@ -233,7 +223,7 @@ class WeChatNotifier:
         tasks = [
             self._do_send_with_retry({
                 "touser": uid,
-                "template_id": self.template_id,
+                "template_id": active_template_id,
                 "url": url_target,
                 "data": template_data,
             })
@@ -260,19 +250,10 @@ class WeChatNotifier:
         title: str = "【招考变动】岗位报名人数发生变化！",
         to: Optional[Any] = None,
         click_url: Optional[str] = None,
+        template_id: Optional[str] = None,
     ) -> WeChatResult:
         """
         发送专属岗位变动提醒消息（完美对齐专属模板）
-
-        Args:
-            unit: 用人单位（对应 keyword1.DATA）
-            post: 岗位名称及代码（对应 keyword2.DATA）
-            enroll_status: 报名情况及变动（对应 keyword3.DATA）
-            change_time: 变动时间（对应 keyword4.DATA，默认为当前时间）
-            remark: 底部备注提示（对应 remark.DATA）
-            title: 卡片顶部标题（对应 first.DATA）
-            to: 指定接收人 openid (支持 str 或 List[str])
-            click_url: 点击卡片跳转的链接
         """
         now_str = change_time or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         template_data = {
@@ -288,6 +269,7 @@ class WeChatNotifier:
             to=to,
             click_url=click_url,
             template_data=template_data,
+            template_id=template_id,
         )
 
     def send_job_alert_sync(

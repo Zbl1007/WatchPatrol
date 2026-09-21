@@ -1,0 +1,200 @@
+<!-- 
+  课时费计算管理系统 · 今日运营数据看板插件
+  所属任务: teach_fee_daily_report
+  支持全自动插拔：放入 templates/panels/ 即可自动挂载
+-->
+<div id="panel-container-teach_fee_daily_report" class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all">
+  <!-- 折叠面板头部 -->
+  <button
+    type="button"
+    onclick="toggleCollapse('section-teach-fee', 'icon-teach-fee')"
+    class="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50/80 transition-colors text-left focus:outline-none"
+  >
+    <div class="flex items-center space-x-3">
+      <div class="w-9 h-9 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center text-sm">
+        <i class="fa-solid fa-chart-line"></i>
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <h3 class="text-base font-bold text-slate-900">课时费系统 · 今日运营数据看板</h3>
+          <span id="tf-report-badge" class="text-xs px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 font-semibold border border-violet-200">
+            <span class="w-1.5 h-1.5 rounded-full bg-violet-500 inline-block mr-1"></span>每晚 22:00 定时推送
+          </span>
+        </div>
+        <span class="text-xs text-slate-400">数据源：课时费管理平台接口 · 任务ID: teach_fee_daily_report</span>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-3 text-slate-400">
+      <span class="text-xs hidden sm:inline font-medium">点击折叠/展开看板</span>
+      <div class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+        <i id="icon-teach-fee" class="fa-solid fa-chevron-down text-xs transition-transform duration-300 transform rotate-180"></i>
+      </div>
+    </div>
+  </button>
+
+  <!-- 折叠面板内容区 (默认展开) -->
+  <div id="section-teach-fee" class="px-6 pb-6 pt-3 border-t border-slate-100 transition-all duration-300 space-y-5">
+    
+    <!-- 5项核心运营指标卡片网格 -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+      
+      <!-- 1. 今日新增用户 -->
+      <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-500 text-xs">
+          <span class="font-medium">今日新增用户</span>
+          <i class="fa-solid fa-user-plus text-slate-400"></i>
+        </div>
+        <div class="my-2">
+          <span id="tf-new-users" class="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900">--</span>
+          <span class="text-xs text-slate-500 ml-0.5">人</span>
+        </div>
+        <div class="text-[11px] text-slate-400">
+          系统总用户: <span id="tf-total-users" class="font-semibold text-slate-600">--</span> 人
+        </div>
+      </div>
+
+      <!-- 2. 今日 AI 调用量 -->
+      <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-500 text-xs">
+          <span class="font-medium">今日 AI 调用量</span>
+          <i class="fa-solid fa-wand-magic-sparkles text-violet-400"></i>
+        </div>
+        <div class="my-2">
+          <span id="tf-ai-usage" class="text-2xl sm:text-3xl font-extrabold font-mono text-violet-600">--</span>
+          <span class="text-xs text-slate-500 ml-0.5">次</span>
+        </div>
+        <div class="text-[11px] text-slate-400">
+          反馈 <span id="tf-ai-feedback" class="font-medium text-slate-600">--</span> / 对话 <span id="tf-ai-chat" class="font-medium text-slate-600">--</span>
+        </div>
+      </div>
+
+      <!-- 3. 今日新增课时 -->
+      <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-500 text-xs">
+          <span class="font-medium">今日记课记录</span>
+          <i class="fa-solid fa-file-lines text-indigo-400"></i>
+        </div>
+        <div class="my-2">
+          <span id="tf-class-records" class="text-2xl sm:text-3xl font-extrabold font-mono text-indigo-600">--</span>
+          <span class="text-xs text-slate-500 ml-0.5">条</span>
+        </div>
+        <div class="text-[11px] text-slate-400">
+          教师实时录入课时流水
+        </div>
+      </div>
+
+      <!-- 4. 今日活跃人数 -->
+      <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-500 text-xs">
+          <span class="font-medium">今日活跃用户</span>
+          <i class="fa-solid fa-fire text-amber-500"></i>
+        </div>
+        <div class="my-2">
+          <span id="tf-active-users" class="text-2xl sm:text-3xl font-extrabold font-mono text-amber-600">--</span>
+          <span class="text-xs text-slate-500 ml-0.5">人</span>
+        </div>
+        <div class="text-[11px] text-slate-400">
+          去重独立使用用户
+        </div>
+      </div>
+
+      <!-- 5. 今日开通订阅 -->
+      <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex flex-col justify-between col-span-2 md:col-span-1">
+        <div class="flex items-center justify-between text-slate-500 text-xs">
+          <span class="font-medium">今日开通订阅</span>
+          <i class="fa-solid fa-gem text-emerald-500"></i>
+        </div>
+        <div class="my-2">
+          <span id="tf-new-subs" class="text-2xl sm:text-3xl font-extrabold font-mono text-emerald-600">--</span>
+          <span class="text-xs text-slate-500 ml-0.5">人</span>
+        </div>
+        <div class="text-[11px] text-slate-400">
+          充值流水: <span class="font-semibold text-emerald-600">¥<span id="tf-sub-income">0.0</span></span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 底部操作与同步时间状态条 -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-3 border-t border-slate-100 text-xs gap-3">
+      <div class="flex items-center space-x-2 text-slate-500">
+        <i class="fa-regular fa-clock text-slate-400"></i>
+        <span>最新指标同步时间: <strong id="tf-last-sync-time" class="text-slate-700 font-mono">--:--:--</strong></span>
+        <span>·</span>
+        <span id="tf-report-status" class="text-slate-500">今晚待推送</span>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <button
+          type="button"
+          onclick="triggerCheck('teach_fee_daily_report')"
+          class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 hover:text-slate-900 transition active:scale-95"
+        >
+          <i class="fa-solid fa-rotate mr-1.5 text-slate-500"></i>
+          立即拉取并推送微信
+        </button>
+
+        <a
+          id="tf-dashboard-link"
+          href="https://dam.520315.xyz"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-200 transition"
+        >
+          <i class="fa-solid fa-arrow-up-right-from-square mr-1.5"></i>
+          直达课时费管理平台
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  /**
+   * 遵循标准插件协议的面板渲染函数
+   * 当主页面拉取到最新 /api/status 时自动回调此函数
+   */
+  window.renderPanel_teach_fee_daily_report = function(taskState, taskSummary) {
+    if (!taskState) return;
+
+    const metrics = taskState.last_metrics || {};
+    const syncTime = taskState.last_check_time || "--:--:--";
+    const reportTime = taskState.report_time || "22:00";
+    const lastReportDate = taskState.last_reported_date || "";
+
+    // 填充 5 项指标数值
+    document.getElementById("tf-new-users").innerText = metrics.new_users_today !== undefined ? metrics.new_users_today : 0;
+    document.getElementById("tf-total-users").innerText = metrics.total_users !== undefined ? metrics.total_users : "--";
+
+    document.getElementById("tf-ai-usage").innerText = metrics.ai_usage_today !== undefined ? metrics.ai_usage_today : 0;
+    const aiBk = metrics.ai_breakdown || {};
+    document.getElementById("tf-ai-feedback").innerText = aiBk.feedback_generation !== undefined ? aiBk.feedback_generation : 0;
+    document.getElementById("tf-ai-chat").innerText = aiBk.agent_chat !== undefined ? aiBk.agent_chat : 0;
+
+    document.getElementById("tf-class-records").innerText = metrics.new_class_records_today !== undefined ? metrics.new_class_records_today : 0;
+    document.getElementById("tf-active-users").innerText = metrics.active_users_today !== undefined ? metrics.active_users_today : 0;
+
+    document.getElementById("tf-new-subs").innerText = metrics.new_subscriptions_today !== undefined ? metrics.new_subscriptions_today : 0;
+    document.getElementById("tf-sub-income").innerText = metrics.subscription_income_today !== undefined ? Number(metrics.subscription_income_today).toFixed(1) : "0.0";
+
+    document.getElementById("tf-last-sync-time").innerText = syncTime;
+
+    // 更新推送状态说明
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10);
+    const badge = document.getElementById("tf-report-badge");
+    const statusText = document.getElementById("tf-report-status");
+
+    if (lastReportDate === todayStr) {
+      statusText.innerHTML = '<span class="text-emerald-600 font-medium"><i class="fa-solid fa-check mr-1"></i>今日日报已于 ' + reportTime + ' 推送</span>';
+      badge.className = "text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200";
+      badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block mr-1"></span>今日已推报';
+    } else {
+      statusText.innerHTML = '<span class="text-slate-500">定时计划: 今晚 ' + reportTime + ' 自动推送</span>';
+      badge.className = "text-xs px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 font-semibold border border-violet-200";
+      badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-violet-500 inline-block mr-1"></span>每晚 ' + reportTime + ' 定时推送';
+    }
+  };
+</script>

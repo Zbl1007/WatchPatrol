@@ -6,6 +6,7 @@
 import os
 import json
 import logging
+import inspect
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
 from datetime import datetime
@@ -22,8 +23,10 @@ class BaseTask(ABC):
 
     task_id: str = "base_task"
     task_name: str = "基础监控任务"
+    task_type: str = "interval"  # interval: 周期巡检型; scheduled: 定时任务型
     interval_seconds: int = 60
     enabled: bool = True
+    is_builtin: bool = True
     # 指定本任务绑定的微信接收人 openid (支持 str 或 List[str]，留空则使用全局默认)
     notify_openids: Optional[Any] = None
 
@@ -106,9 +109,10 @@ class BaseTask(ABC):
         """
         pass
 
-    async def run_once(self) -> Dict[str, Any]:
+    async def run_once(self, force: bool = False) -> Dict[str, Any]:
         """
         执行单次检测（带统一的生命周期追踪与异常防护）
+        :param force: 是否为手动强制执行（例如忽略时刻限制直接出报表）
         """
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.last_run_time = now_str
@@ -116,11 +120,16 @@ class BaseTask(ABC):
         self.last_error = None
         self.run_count += 1
 
-        logger.info("[%s - %s] 开始执行检查第 %d 次", self.task_id, self.task_name, self.run_count)
+        logger.info("[%s - %s] 开始执行检查第 %d 次 (force=%s)", self.task_id, self.task_name, self.run_count, force)
         start_ts = datetime.now()
 
         try:
-            result = await self.execute_check()
+            # 兼容支持 force 参数的子类实现
+            sig = inspect.signature(self.execute_check)
+            if "force" in sig.parameters:
+                result = await self.execute_check(force=force)
+            else:
+                result = await self.execute_check()
             elapsed_ms = int((datetime.now() - start_ts).total_seconds() * 1000)
 
             self.last_status = "success"
@@ -178,15 +187,25 @@ class BaseTask(ABC):
 
     def get_summary(self) -> Dict[str, Any]:
         """获取任务当前的配置与运行状态摘要"""
+        raw_targets = self.get_notify_openids()
+        try:
+            from .contact_manager import contact_manager
+            contact_names = contact_manager.get_contact_names(raw_targets)
+        except Exception:
+            contact_names = self.get_masked_notify_targets()
+
         masked_targets = self.get_masked_notify_targets()
         return {
             "task_id": self.task_id,
             "task_name": self.task_name,
+            "task_type": getattr(self, "task_type", "interval"),
             "interval_seconds": self.interval_seconds,
             "enabled": self.enabled,
             "notify_targets": masked_targets,
+            "contact_names": contact_names,
             "notify_count": len(masked_targets),
             "is_custom_notify": bool(self.notify_openids),
+            "is_builtin": getattr(self, "is_builtin", True),
             "last_run_time": self.last_run_time or self.state.get("last_check_time", ""),
             "last_status": self.last_status,
             "last_error": self.last_error,
@@ -205,6 +224,7 @@ class BaseTask(ABC):
         return {
             "task_id": self.task_id,
             "task_name": self.task_name,
+            "task_type": getattr(self, "task_type", "interval"),
             "interval_seconds": self.interval_seconds,
             "enabled": self.enabled,
             "notify_openids": self.get_notify_openids(),
@@ -217,6 +237,7 @@ class BaseTask(ABC):
         interval_seconds: Optional[int] = None,
         enabled: Optional[bool] = None,
         notify_openids: Optional[Any] = None,
+        **kwargs,
     ) -> Dict[str, Any]:
         """在线更新任务配置并即时写回文本持久化"""
         if interval_seconds is not None:

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>{{ snapshot.title }} · 岗位详情快照</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen font-sans antialiased p-3 sm:p-6 flex justify-center">
+
+  <div class="w-full max-w-lg space-y-4">
+    
+    <!-- 顶部状态小提示 -->
+    <div class="flex items-center justify-between px-1 text-xs text-slate-500">
+      <div class="flex items-center space-x-1.5">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span class="font-medium text-slate-700">WatchPatrol · 岗位变动快照</span>
+      </div>
+      <div class="flex items-center space-x-1 text-slate-400">
+        <i class="fa-regular fa-hourglass-half text-[11px]"></i>
+        <span>时效24小时</span>
+      </div>
+    </div>
+
+    <!-- 岗位主信息卡片 -->
+    <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 relative overflow-hidden">
+      
+      <!-- 头部代码与竞争比徽章 -->
+      <div class="flex items-center justify-between mb-3">
+        <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-mono font-bold bg-slate-100 text-slate-700">
+          {{ job.post_code }}
+        </span>
+        {% if job.post_num == 0 %}
+          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-600 border border-rose-200">
+            <i class="fa-solid fa-fire-flame-curved mr-1 text-[11px]"></i> 当前无人报名
+          </span>
+        {% else %}
+          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            竞争比 {{ (job.post_num / (job.quantity or 1))|round(1) }} : 1
+          </span>
+        {% endif %}
+      </div>
+
+      <!-- 岗位名称与用人单位 -->
+      <h1 class="text-xl font-extrabold text-slate-900 leading-snug tracking-tight">
+        {{ job.post }}
+      </h1>
+      <div class="text-sm font-medium text-indigo-700 mt-1.5 flex items-center">
+        <i class="fa-solid fa-building-shield mr-1.5 text-indigo-500 text-xs"></i>
+        {{ job.unit }}
+      </div>
+
+      <!-- 核心对比大指标 -->
+      <div class="mt-5 grid grid-cols-2 gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+        <div class="text-center sm:text-left">
+          <div class="text-xs text-slate-400 font-medium">当前报考人数</div>
+          <div class="text-3xl font-black font-mono mt-1 {% if job.post_num == 0 %}text-rose-500{% else %}text-slate-900{% endif %}">
+            {{ job.post_num }} <span class="text-xs font-normal text-slate-400">人</span>
+          </div>
+        </div>
+        <div class="text-center sm:text-left border-l border-slate-200/60 pl-3">
+          <div class="text-xs text-slate-400 font-medium">招考计划人数</div>
+          <div class="text-3xl font-black font-mono mt-1 text-slate-900">
+            {{ job.quantity }} <span class="text-xs font-normal text-slate-400">人</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 详细招考要求列表 -->
+      <div class="mt-6 space-y-3.5 text-xs">
+        <div class="flex items-start">
+          <span class="w-16 shrink-0 text-slate-400 font-medium">工作地点</span>
+          <span class="text-slate-800 font-medium flex items-center">
+            <i class="fa-solid fa-location-dot text-rose-400 mr-1.5 text-[11px]"></i>
+            {{ job.station or '以官方公告为准' }}
+          </span>
+        </div>
+
+        <div class="flex items-start">
+          <span class="w-16 shrink-0 text-slate-400 font-medium">学历要求</span>
+          <span class="text-slate-800 font-medium flex items-center">
+            <i class="fa-solid fa-graduation-cap text-indigo-400 mr-1.5 text-[11px]"></i>
+            {{ job.education or '不限' }}
+          </span>
+        </div>
+
+        <div class="flex items-start">
+          <span class="w-16 shrink-0 text-slate-400 font-medium">专业要求</span>
+          <span class="text-slate-700 leading-relaxed break-words bg-slate-50 p-2 rounded-xl border border-slate-100 flex-1">
+            {{ job.subject or '未指定专业' }}
+          </span>
+        </div>
+
+        {% if job.do_job %}
+        <div class="flex items-start">
+          <span class="w-16 shrink-0 text-slate-400 font-medium">工作职责</span>
+          <span class="text-slate-700 leading-relaxed break-words bg-slate-50 p-2 rounded-xl border border-slate-100 flex-1">
+            {{ job.do_job }}
+          </span>
+        </div>
+        {% endif %}
+
+        {% if job.tel %}
+        <div class="flex items-start">
+          <span class="w-16 shrink-0 text-slate-400 font-medium">咨询电话</span>
+          <div class="text-indigo-600 font-mono font-semibold flex items-center flex-wrap gap-2">
+            <i class="fa-solid fa-phone text-indigo-400 mr-1 text-[11px]"></i>
+            <span>{{ job.tel }}</span>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- 底部跳转官方报名源站按钮 -->
+      {% if job.query_url %}
+      <div class="mt-6 pt-5 border-t border-slate-100">
+        <a
+          href="{{ job.query_url }}"
+          target="_blank"
+          class="w-full flex items-center justify-center px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-sm shadow-md shadow-indigo-100 transition active:scale-98"
+        >
+          <i class="fa-solid fa-arrow-up-right-from-square mr-2 text-xs"></i>
+          进入人才网官方招考接口
+        </a>
+      </div>
+      {% endif %}
+
+    </div>
+
+    <!-- 快照时效说明卡片 -->
+    <div class="px-4 py-3 bg-white/70 backdrop-blur rounded-2xl border border-slate-200/60 text-center text-xs text-slate-400 space-y-1">
+      <div>快照生成时间：<span class="font-mono text-slate-600 font-medium">{{ snapshot.created_at }}</span></div>
+      <div class="text-[11px] text-amber-600">
+        <i class="fa-solid fa-triangle-exclamation mr-1"></i>本快照具备 24 小时时效性，将于 <span class="font-mono">{{ snapshot.expire_at }}</span> 自动销毁删除
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

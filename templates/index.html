@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WatchPatrol 巡哨 · 任务监控平台</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome 图标库（国内高速 CDN 加速） -->
+  <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    @keyframes pulse-slow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(1.05); }
+    }
+    .pulse-dot {
+      animation: pulse-slow 2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen font-sans antialiased">
+  <!-- 顶部导航栏 -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-100">
+          <i class="fa-solid fa-radar text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-slate-900 tracking-tight">WatchPatrol <span class="text-sm font-normal text-slate-500">· 巡哨</span></h1>
+          <div class="flex items-center space-x-2 text-xs text-slate-500">
+            <span class="inline-flex items-center text-emerald-600 font-medium">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 pulse-dot"></span>
+              任务调度中心运行中
+            </span>
+            <span>·</span>
+            <span>已载入任务: <span id="tasks-count" class="font-semibold text-slate-700">1</span> 个</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <button id="btn-check-now" onclick="triggerCheck('jd_offer_3jobs')" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 active:scale-95">
+          <i id="btn-icon" class="fa-solid fa-arrows-rotate mr-2"></i>
+          <span id="btn-text">立即检测招考岗位</span>
+        </button>
+
+        <div class="h-6 w-px bg-slate-200 mx-1 hidden sm:block"></div>
+
+        <div class="flex items-center space-x-2">
+          <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700">
+            <i class="fa-solid fa-user-shield mr-1.5 text-indigo-600"></i>
+            {{ current_user or 'admin' }}
+          </span>
+          <a href="/logout" title="退出登录" class="inline-flex items-center justify-center w-9 h-9 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主体容器 -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    
+    <!-- 状态概览横幅 -->
+    <div class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-2xl p-6 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div class="space-y-1">
+        <div class="inline-flex items-center space-x-2 px-3 py-1 bg-white/10 rounded-full text-xs font-medium text-indigo-200">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>微信专属模板消息通道已连通</span>
+        </div>
+        <h2 class="text-xl font-bold tracking-tight">多任务监控调度中枢已启动</h2>
+        <p class="text-sm text-slate-300">各监控任务基于独立协程常驻轮询，人数或业务指标变动时将自动触发微信模板卡片提醒。</p>
+      </div>
+      <div class="bg-white/10 backdrop-blur rounded-xl px-4 py-3 text-right shrink-0 border border-white/10">
+        <div class="text-xs text-slate-400">上次自动检测时间</div>
+        <div id="last-check-time" class="text-base font-semibold text-white mt-0.5">--:--:--</div>
+      </div>
+    </div>
+
+    <!-- 任务调度中心管理卡片区域 -->
+    <div>
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-base font-bold text-slate-900 flex items-center">
+          <i class="fa-solid fa-list-check text-indigo-600 mr-2"></i>
+          系统注册监控任务
+        </h3>
+        <span class="text-xs text-slate-500">继承 BaseTask 即可自动接入本调度器</span>
+      </div>
+      <div id="tasks-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- 任务状态列表动态生成 -->
+      </div>
+    </div>
+
+    <!-- 任务专属监控内容区容器 (支持折叠与多任务扩展) -->
+    <div class="space-y-6">
+      
+      <!-- 任务：重点监控岗位详情折叠卡片 -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all">
+        <!-- 折叠面板头部 (点击整行可展开/折叠) -->
+        <button
+          type="button"
+          onclick="toggleCollapse('section-jd-jobs', 'icon-jd-jobs')"
+          class="w-full px-6 py-4 flex items-center justify-between hover:bg-slate-50/80 transition-colors text-left focus:outline-none"
+        >
+          <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm">
+              <i class="fa-solid fa-layer-group"></i>
+            </div>
+            <div>
+              <div class="flex items-center space-x-2">
+                <h3 class="text-base font-bold text-slate-900">招录动态 · 重点监控岗位 (3 个)</h3>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block mr-1"></span>监控中
+                </span>
+              </div>
+              <span class="text-xs text-slate-400">数据源：人才网报名公开接口 · 任务ID: jd_offer_3jobs</span>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-3 text-slate-400">
+            <span class="text-xs hidden sm:inline font-medium">点击折叠/展开岗位详情</span>
+            <div class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+              <i id="icon-jd-jobs" class="fa-solid fa-chevron-down text-xs transition-transform duration-300 transform rotate-180"></i>
+            </div>
+          </div>
+        </button>
+
+        <!-- 折叠面板内容区 (默认展开) -->
+        <div id="section-jd-jobs" class="px-6 pb-6 pt-3 border-t border-slate-100 transition-all duration-300">
+          <div id="jobs-container" class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-1">
+            <!-- 骨架屏 -->
+            <div class="animate-pulse bg-slate-50 p-6 rounded-2xl border border-slate-200 h-64"></div>
+            <div class="animate-pulse bg-slate-50 p-6 rounded-2xl border border-slate-200 h-64"></div>
+            <div class="animate-pulse bg-slate-50 p-6 rounded-2xl border border-slate-200 h-64"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 变动历史记录 -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i class="fa-solid fa-clock-rotate-left text-slate-500"></i>
+          <h3 class="text-base font-bold text-slate-900">人数变动流水日志</h3>
+        </div>
+        <span id="history-count" class="text-xs font-semibold px-2.5 py-0.5 bg-slate-100 text-slate-600 rounded-full">0 条变动</span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-slate-600">
+          <thead class="bg-slate-50/80 text-xs font-semibold text-slate-500 uppercase border-b border-slate-100">
+            <tr>
+              <th class="px-6 py-3">变动时间</th>
+              <th class="px-6 py-3">岗位代码</th>
+              <th class="px-6 py-3">岗位名称</th>
+              <th class="px-6 py-3">报名变动</th>
+              <th class="px-6 py-3">微信推送状态</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody" class="divide-y divide-slate-100">
+            <tr>
+              <td colspan="5" class="px-6 py-8 text-center text-slate-400">
+                <i class="fa-regular fa-folder-open text-2xl mb-2 block"></i>
+                暂无人数变动记录（当前报名人数保持稳定）
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- 任务配置模态框 (Modal) -->
+  <div id="config-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 transform transition-all">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-sliders"></i>
+          </div>
+          <div>
+            <h3 id="modal-task-name" class="font-bold text-slate-900 text-base">配置监控任务</h3>
+            <span id="modal-task-id" class="text-xs font-mono text-slate-400">task_id</span>
+          </div>
+        </div>
+        <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="config-form" onsubmit="submitConfigForm(event)" class="space-y-4 pt-4">
+        <input type="hidden" id="cfg-task-id" value="" />
+
+        <!-- 任务启用开关 -->
+        <div class="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-100">
+          <div>
+            <div class="text-sm font-semibold text-slate-800">任务运行状态</div>
+            <div class="text-xs text-slate-500">关闭后将暂停后台常驻自动轮询</div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input id="cfg-enabled" type="checkbox" class="sr-only peer">
+            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+          </label>
+        </div>
+
+        <!-- 巡检周期 -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">
+            巡检检测周期 (秒)
+          </label>
+          <div class="relative">
+            <input
+              id="cfg-interval"
+              type="number"
+              min="5"
+              required
+              class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="默认 60 秒"
+            />
+            <span class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-xs text-slate-400 pointer-events-none">秒/次</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">建议 30 ~ 120 秒，避免过于高频请求源站。</p>
+        </div>
+
+        <!-- 专属微信接收人 -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="block text-xs font-semibold text-slate-700">
+              微信接收人 OpenID
+            </label>
+            <span class="text-[11px] text-slate-400">留空则自动使用全局默认接收人</span>
+          </div>
+          <textarea
+            id="cfg-openids"
+            rows="2"
+            class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            placeholder="支持填入多个 openid，用英文逗号隔开"
+          ></textarea>
+          <div class="flex items-center justify-between mt-1.5">
+            <span class="text-[11px] text-slate-400">关注测试号后在用户列表中获取</span>
+            <button
+              id="btn-test-send"
+              type="button"
+              onclick="triggerTestNotifyForModal()"
+              class="text-xs text-indigo-600 hover:text-indigo-800 font-medium inline-flex items-center px-2 py-1 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition"
+            >
+              <i class="fa-solid fa-paper-plane mr-1 text-[11px]"></i>向该任务接收人发一条测试
+            </button>
+          </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="pt-4 border-t border-slate-100 flex items-center justify-end space-x-3">
+          <button
+            type="button"
+            onclick="closeConfigModal()"
+            class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition"
+          >
+            取消
+          </button>
+          <button
+            id="btn-save-cfg"
+            type="submit"
+            class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md transition active:scale-95"
+          >
+            保存并即时生效
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 提示弹窗 Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 z-50">
+    <span id="toast-icon" class="text-emerald-400"><i class="fa-solid fa-circle-check"></i></span>
+    <span id="toast-msg" class="text-sm font-medium"></span>
+  </div>
+
+  <script>
+    let stateData = null;
+
+    function toggleCollapse(sectionId, iconId) {
+      const section = document.getElementById(sectionId);
+      const icon = document.getElementById(iconId);
+      if (!section || !icon) return;
+
+      const isHidden = section.classList.contains("hidden");
+      if (isHidden) {
+        section.classList.remove("hidden");
+        icon.classList.add("rotate-180");
+      } else {
+        section.classList.add("hidden");
+        icon.classList.remove("rotate-180");
+      }
+    }
+
+    function showToast(msg, isError = false) {
+      const toast = document.getElementById("toast");
+      const icon = document.getElementById("toast-icon");
+      const text = document.getElementById("toast-msg");
+      text.innerText = msg;
+      icon.innerHTML = isError 
+        ? '<i class="fa-solid fa-circle-exclamation text-rose-400"></i>' 
+        : '<i class="fa-solid fa-circle-check text-emerald-400"></i>';
+      toast.classList.remove("translate-y-20", "opacity-0");
+      setTimeout(() => {
+        toast.classList.add("translate-y-20", "opacity-0");
+      }, 3000);
+    }
+
+    async function loadData() {
+      try {
+        const resp = await fetch("/api/status");
+        if (resp.status === 401) {
+          window.location.href = "/login";
+          return;
+        }
+        if (!resp.ok) throw new Error("获取状态失败");
+        stateData = await resp.json();
+        render();
+      } catch (err) {
+        console.error("加载状态异常:", err);
+      }
+    }
+
+    function render() {
+      if (!stateData) return;
+      document.getElementById("last-check-time").innerText = stateData.last_check_time || "未检测";
+
+      // 渲染任务概览卡片
+      const allTasks = stateData.all_tasks || [];
+      document.getElementById("tasks-count").innerText = allTasks.filter(t => t.enabled).length;
+      const tasksGrid = document.getElementById("tasks-grid");
+
+      tasksGrid.innerHTML = allTasks.map(t => {
+        const isOk = t.last_status === 'success' || t.last_status === 'ready';
+        return `
+          <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex items-center justify-between">
+            <div class="space-y-1">
+              <div class="flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full ${t.enabled ? (isOk ? 'bg-emerald-500' : 'bg-rose-500') : 'bg-slate-300'}"></span>
+                <span class="font-bold text-sm text-slate-800">${t.task_name}</span>
+                <span class="text-xs px-2 py-0.5 rounded font-mono ${t.enabled ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-500'}">
+                  ${t.enabled ? '每 ' + t.interval_seconds + 's' : '已暂停'}
+                </span>
+              </div>
+              <div class="text-xs text-slate-500 flex items-center space-x-3">
+                <span>任务ID: <code class="text-slate-600">${t.task_id}</code></span>
+                <span>·</span>
+                <span>已巡检: ${t.run_count} 次</span>
+                <span>·</span>
+                <span>状态: <span class="${isOk ? 'text-emerald-600' : 'text-rose-500'} font-medium">${t.last_status}</span></span>
+              </div>
+              <div class="text-[11px] text-slate-500 flex items-center pt-1">
+                <i class="fa-brands fa-weixin mr-1.5 ${t.notify_count > 0 ? 'text-emerald-500' : 'text-slate-400'}"></i>
+                <span class="text-slate-400">接收人:</span>
+                <span class="ml-1 font-mono text-slate-700 font-medium">
+                  ${t.notify_targets && t.notify_targets.length > 0 ? t.notify_targets.join(', ') : '未指定 (回退全局默认)'}
+                </span>
+                <span class="ml-1 text-[10px] px-1.5 py-0.2 rounded ${t.is_custom_notify ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-500'}">
+                  ${t.is_custom_notify ? '专属指定' : '全局默认'}
+                </span>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2 shrink-0">
+              <button onclick="openConfigModal('${t.task_id}')" class="px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 border border-slate-200 rounded-lg transition active:scale-95" title="在线修改任务配置">
+                <i class="fa-solid fa-gear mr-1"></i>配置
+              </button>
+              ${t.enabled ? `
+                <button onclick="triggerCheck('${t.task_id}')" class="px-2.5 py-1.5 text-xs font-medium text-white bg-slate-800 hover:bg-slate-900 rounded-lg transition active:scale-95">
+                  单次触发
+                </button>
+              ` : `
+                <span class="text-xs text-slate-400 px-2 py-1 bg-slate-50 rounded border border-slate-100">已暂停</span>
+              `}
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      // 渲染岗位卡片
+      const jobsContainer = document.getElementById("jobs-container");
+      const jobs = stateData.jobs || {};
+      const jobKeys = Object.keys(jobs);
+
+      if (jobKeys.length === 0) {
+        jobsContainer.innerHTML = `<div class="col-span-3 text-center py-12 text-slate-400">正在抓取岗位初始数据...</div>`;
+      } else {
+        jobsContainer.innerHTML = jobKeys.map(k => {
+          const job = jobs[k];
+          const isZero = job.post_num === 0;
+          const ratio = (job.post_num / (job.quantity || 1)).toFixed(1);
+
+          return `
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow relative flex flex-col justify-between">
+              <div>
+                <!-- 头部代码与标签 -->
+                <div class="flex items-center justify-between mb-3">
+                  <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold font-mono ${
+                    isZero ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'
+                  }">
+                    ${job.post_code}
+                  </span>
+                  ${isZero ? `
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-600 border border-rose-200">
+                      <i class="fa-solid fa-fire-flame-curved mr-1 text-[10px]"></i> 当前无人报名
+                    </span>
+                  ` : `
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      竞争比 ${ratio}:1
+                    </span>
+                  `}
+                </div>
+
+                <!-- 岗位标题与单位 -->
+                <h4 class="text-lg font-bold text-slate-900 leading-snug">${job.post}</h4>
+                <div class="text-xs text-slate-500 mt-1 flex items-center space-x-2">
+                  <span><i class="fa-solid fa-location-dot text-slate-400 mr-1"></i>${job.station}</span>
+                  <span>·</span>
+                  <span><i class="fa-solid fa-graduation-cap text-slate-400 mr-1"></i>${job.education}</span>
+                </div>
+
+                <!-- 报名关键数值展示 -->
+                <div class="mt-6 mb-4 grid grid-cols-2 gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <div>
+                    <div class="text-xs text-slate-400 font-medium">当前报名人数</div>
+                    <div class="text-3xl font-extrabold font-mono mt-1 ${isZero ? 'text-amber-600' : 'text-slate-900'}">
+                      ${job.post_num} <span class="text-xs font-normal text-slate-500">人</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="text-xs text-slate-400 font-medium">招考计划人数</div>
+                    <div class="text-3xl font-extrabold font-mono mt-1 text-slate-900">
+                      ${job.quantity} <span class="text-xs font-normal text-slate-500">人</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 专业要求摘要 -->
+                <div class="text-xs text-slate-600 line-clamp-2 mb-4 leading-relaxed" title="${job.subject}">
+                  <strong class="text-slate-700">专业:</strong> ${job.subject}
+                </div>
+              </div>
+
+              <!-- 底部操作与更新时间 -->
+              <div class="pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
+                <span class="text-slate-400 font-mono">${job.last_checked ? job.last_checked.split(' ')[1] : ''}</span>
+                <a href="${job.query_url}" target="_blank" class="text-indigo-600 hover:text-indigo-800 font-medium inline-flex items-center">
+                  查看官方接口 <i class="fa-solid fa-arrow-up-right-from-square ml-1 text-[10px]"></i>
+                </a>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+
+      // 渲染历史记录
+      const history = stateData.history || [];
+      document.getElementById("history-count").innerText = `${history.length} 条变动`;
+      const tbody = document.getElementById("history-tbody");
+
+      if (history.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="px-6 py-8 text-center text-slate-400">
+              <i class="fa-regular fa-folder-open text-2xl mb-2 block"></i>
+              暂无人数变动记录（当前报名人数保持稳定）
+            </td>
+          </tr>
+        `;
+      } else {
+        tbody.innerHTML = history.map(item => `
+          <tr class="hover:bg-slate-50/80 transition-colors">
+            <td class="px-6 py-3 font-mono text-xs text-slate-500">${item.time}</td>
+            <td class="px-6 py-3 font-mono font-semibold text-slate-700">${item.post_code}</td>
+            <td class="px-6 py-3 text-slate-900 font-medium">${item.post_name}</td>
+            <td class="px-6 py-3">
+              <span class="inline-flex items-center font-mono font-bold text-indigo-700 px-2 py-0.5 bg-indigo-50 rounded">
+                ${item.change_text || (item.old_num + '人 -> ' + item.new_num + '人')}
+              </span>
+            </td>
+            <td class="px-6 py-3">
+              ${item.notified ? `
+                <span class="inline-flex items-center text-xs font-semibold text-emerald-600">
+                  <i class="fa-solid fa-check-circle mr-1"></i> 微信已推送
+                </span>
+              ` : `
+                <span class="inline-flex items-center text-xs font-semibold text-rose-500">
+                  <i class="fa-solid fa-times-circle mr-1"></i> 推送未成功
+                </span>
+              `}
+            </td>
+          </tr>
+        `).join("");
+      }
+    }
+
+    async function triggerCheck(taskId = 'jd_offer_3jobs') {
+      const btn = document.getElementById("btn-check-now");
+      const icon = document.getElementById("btn-icon");
+      const text = document.getElementById("btn-text");
+
+      btn.disabled = true;
+      icon.classList.add("fa-spin");
+      text.innerText = "检测中...";
+
+      try {
+        const resp = await fetch(`/api/tasks/${taskId}/check-now`, { method: "POST" });
+        const data = await resp.json();
+        if (data.success) {
+          showToast(`任务 [${taskId}] 检测完成！耗时 ${data.elapsed_ms}ms`);
+          await loadData();
+        } else {
+          showToast("检测失败: " + (data.error || '未知错误'), true);
+        }
+      } catch (e) {
+        showToast("请求服务异常", true);
+      } finally {
+        btn.disabled = false;
+        icon.classList.remove("fa-spin");
+        text.innerText = "立即检测招考岗位";
+      }
+    }
+
+    // ------ 任务配置模态框控制逻辑 ------
+    let currentConfigTaskId = null;
+
+    async function openConfigModal(taskId) {
+      currentConfigTaskId = taskId;
+      document.getElementById("cfg-task-id").value = taskId;
+      document.getElementById("modal-task-id").innerText = taskId;
+      document.getElementById("modal-task-name").innerText = "正在读取配置...";
+
+      const modal = document.getElementById("config-modal");
+      modal.classList.remove("hidden");
+
+      try {
+        const resp = await fetch(`/api/tasks/${taskId}/config`);
+        if (resp.status === 401) {
+          window.location.href = "/login";
+          return;
+        }
+        const data = await resp.json();
+        if (data.success) {
+          const cfg = data.config;
+          document.getElementById("modal-task-name").innerText = cfg.task_name || "配置监控任务";
+          document.getElementById("cfg-enabled").checked = Boolean(cfg.enabled);
+          document.getElementById("cfg-interval").value = cfg.interval_seconds || 60;
+          document.getElementById("cfg-openids").value = cfg.raw_openids_text || "";
+        } else {
+          showToast("获取任务配置失败: " + data.error, true);
+          closeConfigModal();
+        }
+      } catch (err) {
+        showToast("请求任务配置失败", true);
+        closeConfigModal();
+      }
+    }
+
+    function closeConfigModal() {
+      document.getElementById("config-modal").classList.add("hidden");
+      currentConfigTaskId = null;
+    }
+
+    async function submitConfigForm(e) {
+      e.preventDefault();
+      if (!currentConfigTaskId) return;
+
+      const btn = document.getElementById("btn-save-cfg");
+      const originalText = btn.innerText;
+      btn.disabled = true;
+      btn.innerText = "保存中...";
+
+      const enabled = document.getElementById("cfg-enabled").checked;
+      const interval_seconds = parseInt(document.getElementById("cfg-interval").value, 10);
+      const notify_openids = document.getElementById("cfg-openids").value.trim();
+
+      try {
+        const resp = await fetch(`/api/tasks/${currentConfigTaskId}/config`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            enabled: enabled,
+            interval_seconds: interval_seconds,
+            notify_openids: notify_openids,
+          }),
+        });
+
+        const data = await resp.json();
+        if (resp.ok && data.success) {
+          showToast("任务配置保存成功并已即时热生效！");
+          closeConfigModal();
+          await loadData();
+        } else {
+          showToast("配置保存失败: " + (data.error || "未知错误"), true);
+        }
+      } catch (err) {
+        showToast("请求失败，请检查服务状态", true);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = originalText;
+      }
+    }
+
+    async function triggerTestNotifyForModal() {
+      if (!currentConfigTaskId) return;
+      const btn = document.getElementById("btn-test-send");
+      const originalHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i>正在发送测试...';
+
+      try {
+        const resp = await fetch(`/api/tasks/${currentConfigTaskId}/test-notify`, { method: "POST" });
+        const data = await resp.json();
+        if (resp.ok && data.success) {
+          showToast(`测试通知已成功推送到微信: ${data.targets.join(", ")}`);
+        } else {
+          showToast(`微信测试发送失败: ${data.err_msg || data.error || '请检查openid'}`, true);
+        }
+      } catch (err) {
+        showToast("网络请求异常", true);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+      }
+    }
+
+    // 初始化载入并开启 15 秒静默轮询刷新
+    loadData();
+    setInterval(loadData, 15000);
+  </script>
+</body>
+</html>

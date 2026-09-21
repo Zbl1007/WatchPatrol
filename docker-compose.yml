@@ -1,0 +1,39 @@
+# ==============================================================================
+# 任务监控平台 Docker Compose 部署配置文件
+# 启动命令: docker compose up -d --build
+# 查看日志: docker compose logs -f
+# 停止命令: docker compose down
+# ==============================================================================
+version: '3.8'
+
+services:
+  monitor-platform:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # 国内服务器如拉取官方镜像超时，可在 .env 中设置 BASE_IMAGE，例如：
+        # BASE_IMAGE=docker.m.daocloud.io/library/python:3.11-slim
+        BASE_IMAGE: ${BASE_IMAGE:-python:3.11-slim}
+    container_name: monitor-platform
+    restart: unless-stopped
+    ports:
+      - "${PORT:-45152}:8080"
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Shanghai
+      - PORT=8080
+      - RELOAD=${RELOAD:-false}
+    volumes:
+      # 挂载数据存储目录（持久化岗位状态与变动日志，重建容器不丢数据）
+      - ./data:/app/data
+      # 挂载环境配置文件（方便随时在服务器宿主机修改配置与密码）
+      - ./.env:/app/.env
+      # 挂载任务插件目录（方便后续在宿主机直接编写或放入新的监控脚本）
+      - ./tasks:/app/tasks
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"

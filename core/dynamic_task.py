@@ -6,14 +6,22 @@
 import logging
 from typing import Dict, List, Any, Optional
 from datetime import datetime
-import pytz
+try:
+    import pytz
+    CHINA_TZ = pytz.timezone("Asia/Shanghai")
+except ImportError:
+    try:
+        from zoneinfo import ZoneInfo
+        CHINA_TZ = ZoneInfo("Asia/Shanghai")
+    except ImportError:
+        from datetime import timezone, timedelta
+        CHINA_TZ = timezone(timedelta(hours=8))
 
 from .base_task import BaseTask
 from .plugin_manager import plugin_manager
 from .contact_manager import contact_manager
 
 logger = logging.getLogger("core.dynamic_task")
-CHINA_TZ = pytz.timezone("Asia/Shanghai")
 
 
 class DynamicTask(BaseTask):

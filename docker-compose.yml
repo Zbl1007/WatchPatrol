@@ -18,6 +18,7 @@ services:
     container_name: monitor-platform
     restart: unless-stopped
     ports:
+      # 宿主机端口:容器内端口（默认 8080。微信卡片点击查看 HTML 详情需放通此宿主机端口）
       - "${PORT:-45152}:8080"
     env_file:
       - .env
@@ -26,11 +27,13 @@ services:
       - PORT=8080
       - RELOAD=${RELOAD:-false}
     volumes:
-      # 挂载数据存储目录（持久化岗位状态与变动日志，重建容器不丢数据）
+      # 挂载数据存储目录（持久化岗位状态、通讯录、时效 HTML 快照等，重建容器不丢数据）
       - ./data:/app/data
-      # 挂载环境配置文件（方便随时在服务器宿主机修改配置与密码）
+      # 挂载环境配置文件（方便随时在宿主机修改配置与推送凭证）
       - ./.env:/app/.env
-      # 挂载任务插件目录（方便后续在宿主机直接编写或放入新的监控脚本）
+      # 挂载插件目录（放入新的监控脚本即可热插拔加载使用，无需重新构建镜像）
+      - ./plugins:/app/plugins
+      # 挂载内置任务脚本目录
       - ./tasks:/app/tasks
     logging:
       driver: "json-file"
